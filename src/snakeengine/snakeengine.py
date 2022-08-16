@@ -1,3 +1,4 @@
+from ssl import create_default_context
 from turtle import up
 import numpy as np
 import random
@@ -15,6 +16,8 @@ class SnakeEngine:
         self._directions_dict:dict[str:list] = {'U':(0, -1), 'D':(0, 1), 'L':(-1, 0), 'R':(1, 0)}
 
         self.is_lost = False
+
+        self.first_move = True
 
         self._initalize_game()
 
@@ -102,6 +105,90 @@ class SnakeEngine:
 
 
 
+class VisualizeBoard:
+
+    def __init__(self, engine):
+
+        self.s = engine
+        self.fig, self.ax, self.plot = self.create_board(self.s.map_matrix)
+        self.anim = FuncAnimation(self.fig, lambda x: self.update_plot(x, self.plot), interval = INTERVAL, blit = True)
+
+    def create_board(self, data:np.ndarray):
+        fig, ax = plt.subplots(1, 1, figsize=(FIG_SIZE,FIG_SIZE))
+        fig.canvas.toolbar.pack_forget()
+        fig.subplots_adjust(0,0,1,1)
+        plt.rcParams['keymap.save'].remove('s')
+        plt.axis('off')
+        plt.grid()
+        plot = ax.matshow(data, cmap = ListedColormap(COLORS))
+
+        return fig, ax, plot
+
+
+    def update_plot(self, _, plot):
+        if not self.s.is_lost:
+            plot.set_data(self.s.map_matrix)
+
+        else:
+            plt.text(MAP_SIZE//2, MAP_SIZE//2, s="YOU LOST\nPRESS SPACEBAR TO RESTART", size=2*FIG_SIZE, color = COLORS[-2], horizontalalignment='center', verticalalignment='center')
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+
+        return [plot]
+
+
+class ManualControl:
+
+    def __init__(self, engine):
+        self.s = engine
+        self.detect_key = threading.Thread(target=self.get_direction, daemon=True)
+        self.detect_key.start()
+        self.direction = self.s._direction
+
+    def get_direction(self):
+        while True:
+            if not self.s.is_lost:
+                press = keyboard.read_key()
+                try:  
+                    if press == 'w':
+                        with LOCK:
+                            self.s.first_move = False
+                            self.direction = 'U'
+                    if press == 's':
+                        with LOCK:
+                            self.s.first_move = False
+                            self.direction = 'D'
+                    if press == 'a':
+                        with LOCK:
+                            self.s.first_move = False
+                            self.direction = 'L'
+                    if press == 'd':
+                        with LOCK:
+                            self.s.first_move = False
+                            self.direction = 'R'
+                except:
+                    pass
+
+            else:
+                while True:
+                    press = keyboard.read_key()
+                    if press == 'space':
+                        with LOCK:                            
+                            self.s.is_lost = False
+                            self.s.first_move = True
+                        break
+
+        
+    def move(self):
+        t = threading.Timer(MOVE_INTERVAL, self.move)
+        t.daemon = True
+        t.start()
+        if not self.s.is_lost and not self.s.first_move:
+            self.s.make_move(self.direction)
+
+
+
+
 if __name__=='__main__':
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
@@ -111,71 +198,15 @@ if __name__=='__main__':
 
     FIG_SIZE = 5
     COLORS = ['k', 'r', 'w', 'g']
-
-    def update_plot(_):
-        global current_direction
-        with LOCK:
-            c_dir = current_direction  
-
-        if c_dir:
-            s.make_move(c_dir)
-
-        if not s.is_lost:
-            plot.set_data(s.map_matrix)
-
-        else:
-            plt.text(MAP_SIZE//2, MAP_SIZE//2, s="YOU LOST\nPRESS SPACEBAR TO RESTART", size=2*FIG_SIZE, color = COLORS[-2], horizontalalignment='center', verticalalignment='center')
-            fig.canvas.draw()
-            fig.canvas.flush_events()
-            while True:
-                press = keyboard.read_key()
-                if press == 'space':
-                    with LOCK:
-                        current_direction = None
-                        
-                    plot.set_data(s.map_matrix)
-                    s.is_lost = False
-                    break
-
-        return [plot]
-
-    def get_direction():
-        global current_direction
-        while True:
-            if not s.is_lost:
-                press = keyboard.read_key()
-                try:  
-                    if press == 'w':
-                        with LOCK:
-                            current_direction = 'U'
-                    if press == 's':
-                        with LOCK:
-                            current_direction = 'D'
-                    if press == 'a':
-                        with LOCK:
-                            current_direction = 'L'
-                    if press == 'd':
-                        with LOCK:
-                            current_direction = 'R'
-                except:
-                    pass
+    INTERVAL = 10
+    MOVE_INTERVAL = 0.07
 
 
     LOCK = threading.Lock()
 
-    s = SnakeEngine(MAP_SIZE)
-    current_direction = None
+    snake = SnakeEngine(MAP_SIZE)
+    board = VisualizeBoard(snake)
+    key_grabber = ManualControl(snake)
 
-    detect_key = threading.Thread(target=get_direction, daemon=True)
-    detect_key.start()
-
-    fig, ax = plt.subplots(1, 1, figsize=(FIG_SIZE,FIG_SIZE))
-    fig.canvas.toolbar.pack_forget()
-    fig.subplots_adjust(0,0,1,1)
-    plt.rcParams['keymap.save'].remove('s')
-    plt.axis('off')
-    plt.grid()
-    plot = ax.matshow(s.map_matrix, cmap = ListedColormap(COLORS))
-
-    anim = FuncAnimation(fig, update_plot, interval = 10, blit = True)
+    key_grabber.move()
     plt.show()
