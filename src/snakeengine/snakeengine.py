@@ -1,7 +1,8 @@
+from turtle import up
 import numpy as np
 import random
 
-MAP_SIZE = 10
+MAP_SIZE = 25
 
 
 class SnakeEngine:
@@ -35,7 +36,7 @@ class SnakeEngine:
             self._head = self._starting_points[0]
             self._tail = [self._starting_points[1]]
 
-        self._direction:str = 'U' if self._head[0]-self._tail[0][0]==-1 else 'D' if self._head[0]-self._tail[0][0]==1 else 'L' if self._head[1]-self._tail[0][1]==-1 else 'R'
+        self._direction:str = 'U' if self._head[1]-self._tail[0][1]==-1 else 'D' if self._head[1]-self._tail[0][1]==1 else 'L' if self._head[0]-self._tail[0][0]==-1 else 'R'
 
         self._new_apple()
 
@@ -84,6 +85,7 @@ class SnakeEngine:
 
     def _lost(self):
         self.is_lost = True
+        self._initalize_game()
 
     
     def make_move(self, direction:str):
@@ -99,3 +101,81 @@ class SnakeEngine:
         self._tick()
 
 
+
+if __name__=='__main__':
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
+    from matplotlib.colors import ListedColormap
+    import threading
+    import keyboard
+
+    FIG_SIZE = 5
+    COLORS = ['k', 'r', 'w', 'g']
+
+    def update_plot(_):
+        global current_direction
+        with LOCK:
+            c_dir = current_direction  
+
+        if c_dir:
+            s.make_move(c_dir)
+
+        if not s.is_lost:
+            plot.set_data(s.map_matrix)
+
+        else:
+            plt.text(MAP_SIZE//2, MAP_SIZE//2, s="YOU LOST\nPRESS SPACEBAR TO RESTART", size=2*FIG_SIZE, color = COLORS[-2], horizontalalignment='center', verticalalignment='center')
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+            while True:
+                press = keyboard.read_key()
+                if press == 'space':
+                    with LOCK:
+                        current_direction = None
+                        
+                    plot.set_data(s.map_matrix)
+                    s.is_lost = False
+                    break
+
+        return [plot]
+
+    def get_direction():
+        global current_direction
+        while True:
+            if not s.is_lost:
+                press = keyboard.read_key()
+                try:  
+                    if press == 'w':
+                        with LOCK:
+                            current_direction = 'U'
+                    if press == 's':
+                        with LOCK:
+                            current_direction = 'D'
+                    if press == 'a':
+                        with LOCK:
+                            current_direction = 'L'
+                    if press == 'd':
+                        with LOCK:
+                            current_direction = 'R'
+                except:
+                    pass
+
+
+    LOCK = threading.Lock()
+
+    s = SnakeEngine(MAP_SIZE)
+    current_direction = None
+
+    detect_key = threading.Thread(target=get_direction, daemon=True)
+    detect_key.start()
+
+    fig, ax = plt.subplots(1, 1, figsize=(FIG_SIZE,FIG_SIZE))
+    fig.canvas.toolbar.pack_forget()
+    fig.subplots_adjust(0,0,1,1)
+    plt.rcParams['keymap.save'].remove('s')
+    plt.axis('off')
+    plt.grid()
+    plot = ax.matshow(s.map_matrix, cmap = ListedColormap(COLORS))
+
+    anim = FuncAnimation(fig, update_plot, interval = 10, blit = True)
+    plt.show()

@@ -1,4 +1,3 @@
-from tarfile import TarFile
 import numpy as np
 
 
