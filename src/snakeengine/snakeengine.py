@@ -136,6 +136,9 @@ class VisualizeBoard:
 
         return [plot]
 
+    def run_board(self):
+        plt.show()
+
 
 class ManualControl:
 
@@ -149,25 +152,19 @@ class ManualControl:
         while True:
             if not self.s.is_lost:
                 press = keyboard.read_key()
-                try:  
-                    if press == 'w':
-                        with LOCK:
-                            self.s.first_move = False
-                            self.direction = 'U'
-                    if press == 's':
-                        with LOCK:
-                            self.s.first_move = False
-                            self.direction = 'D'
-                    if press == 'a':
-                        with LOCK:
-                            self.s.first_move = False
-                            self.direction = 'L'
-                    if press == 'd':
-                        with LOCK:
-                            self.s.first_move = False
-                            self.direction = 'R'
-                except:
-                    pass
+                
+                if press == 'w':
+                    self.s.first_move = False
+                    self.direction = 'U'
+                if press == 's':
+                    self.s.first_move = False
+                    self.direction = 'D'
+                if press == 'a':
+                    self.s.first_move = False
+                    self.direction = 'L'
+                if press == 'd':
+                    self.s.first_move = False
+                    self.direction = 'R'
 
             else:
                 while True:
@@ -209,4 +206,5 @@ if __name__=='__main__':
     key_grabber = ManualControl(snake)
 
     key_grabber.move()
-    plt.show()
+
+    board.run_board()
