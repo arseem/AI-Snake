@@ -3,8 +3,6 @@ from turtle import up
 import numpy as np
 import random
 
-MAP_SIZE = 25
-
 
 class SnakeEngine:
 
@@ -102,109 +100,4 @@ class SnakeEngine:
 
         self._direction = direction
         self._tick()
-
-
-
-class VisualizeBoard:
-
-    def __init__(self, engine):
-
-        self.s = engine
-        self.fig, self.ax, self.plot = self.create_board(self.s.map_matrix)
-        self.anim = FuncAnimation(self.fig, lambda x: self.update_plot(x, self.plot), interval = INTERVAL, blit = True)
-
-    def create_board(self, data:np.ndarray):
-        fig, ax = plt.subplots(1, 1, figsize=(FIG_SIZE,FIG_SIZE))
-        fig.canvas.toolbar.pack_forget()
-        fig.subplots_adjust(0,0,1,1)
-        plt.rcParams['keymap.save'].remove('s')
-        plt.axis('off')
-        plt.grid()
-        plot = ax.matshow(data, cmap = ListedColormap(COLORS))
-
-        return fig, ax, plot
-
-
-    def update_plot(self, _, plot):
-        if not self.s.is_lost:
-            plot.set_data(self.s.map_matrix)
-
-        else:
-            plt.text(MAP_SIZE//2, MAP_SIZE//2, s="YOU LOST\nPRESS SPACEBAR TO RESTART", size=2*FIG_SIZE, color = COLORS[-2], horizontalalignment='center', verticalalignment='center')
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
-
-        return [plot]
-
-    def run_board(self):
-        plt.show()
-
-
-class ManualControl:
-
-    def __init__(self, engine):
-        self.s = engine
-        self.detect_key = threading.Thread(target=self.get_direction, daemon=True)
-        self.detect_key.start()
-        self.direction = self.s._direction
-
-    def get_direction(self):
-        while True:
-            if not self.s.is_lost:
-                press = keyboard.read_key()
-                
-                if press == 'w':
-                    self.s.first_move = False
-                    self.direction = 'U'
-                if press == 's':
-                    self.s.first_move = False
-                    self.direction = 'D'
-                if press == 'a':
-                    self.s.first_move = False
-                    self.direction = 'L'
-                if press == 'd':
-                    self.s.first_move = False
-                    self.direction = 'R'
-
-            else:
-                while True:
-                    press = keyboard.read_key()
-                    if press == 'space':
-                        with LOCK:                            
-                            self.s.is_lost = False
-                            self.s.first_move = True
-                        break
-
         
-    def move(self):
-        t = threading.Timer(MOVE_INTERVAL, self.move)
-        t.daemon = True
-        t.start()
-        if not self.s.is_lost and not self.s.first_move:
-            self.s.make_move(self.direction)
-
-
-
-
-if __name__=='__main__':
-    import matplotlib.pyplot as plt
-    from matplotlib.animation import FuncAnimation
-    from matplotlib.colors import ListedColormap
-    import threading
-    import keyboard
-
-    FIG_SIZE = 5
-    COLORS = ['k', 'r', 'w', 'g']
-    INTERVAL = 10
-    MOVE_INTERVAL = 0.07
-
-
-    LOCK = threading.Lock()
-
-    snake = SnakeEngine(MAP_SIZE)
-    board = VisualizeBoard(snake)
-    key_grabber = ManualControl(snake)
-
-    key_grabber.move()
-
-    board.run_board()
