@@ -44,11 +44,11 @@ class VisualizeBoard:
         if self.s.score != self.last_score:
             self.display.fill((26, 13, 0))
             h_score = self.font_small.render(f'HIGH SCORE:  {self.s.high_score}', 1, (255, 255, 255))
-            score = self.font_small.render(f'SCORE:       {self.s.high_score}', 1, (255, 255, 255))
+            score = self.font_small.render(f'SCORE:       {self.s.score}', 1, (255, 255, 255))
             self.display.blit(h_score, (self.fig_size*10, self.fig_size*1.5))
             self.display.blit(score, (self.fig_size*10, self.fig_size*5.5))
+        
         self.display.blit(surf, (self.fig_size*10, self.fig_size*10))
-
         self.manager.draw_ui(self.display)
         self.display.blit(speed_label, speed_label_rect)
         pg.display.update()
