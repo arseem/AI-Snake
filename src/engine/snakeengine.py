@@ -1,20 +1,24 @@
-from ssl import create_default_context
-from turtle import up
 import numpy as np
 import random
 
 
 class SnakeEngine:
 
-    def __init__(self, map_size:int, apples_list:list=[], starting_points=[]):
+    def __init__(self, map_size:int, apples_list:list=[], starting_points:list=[], high_score:int=0, representations:tuple=(0, 1, 2, 3)):
         self._map_size:int = map_size
         self._apples_list = apples_list
         self._starting_points = starting_points
 
+        self._empty_field_rep = representations[0]
+        self._apple_rep = representations[1]
+        self._head_rep = representations[2]
+        self._tail_rep = representations[3]
+
         self._directions_dict:dict[str:list] = {'U':(0, -1), 'D':(0, 1), 'L':(-1, 0), 'R':(1, 0)}
 
+        self.score = 0
+        self.high_score = high_score
         self.is_lost = False
-
         self.first_move = True
 
         self._initalize_game()
@@ -22,6 +26,7 @@ class SnakeEngine:
 
     def _initalize_game(self):
         self.map_matrix:np.matrix = np.zeros((self._map_size, self._map_size), dtype=int)
+        self.score = 0
 
         #   0 - empty field
         #   1 - apple
@@ -41,10 +46,10 @@ class SnakeEngine:
 
         self._new_apple()
 
-        self.map_matrix[self._apple[1]][self._apple[0]] = 1
-        self.map_matrix[self._head[1]][self._head[0]] = 2
+        self.map_matrix[self._apple[1]][self._apple[0]] = self._apple_rep
+        self.map_matrix[self._head[1]][self._head[0]] = self._head_rep
         for i in self._tail:
-            self.map_matrix[i[1]][i[0]] = 3
+            self.map_matrix[i[1]][i[0]] = self._tail_rep
 
     
     def _new_apple(self):
@@ -62,7 +67,7 @@ class SnakeEngine:
 
     
     def _tick(self):
-        self.map_matrix[self._head[1]][self._head[0]] = 3
+        self.map_matrix[self._head[1]][self._head[0]] = self._tail_rep
 
         self._tail.append(list(self._head))
         self._head[0] += self._directions_dict[self._direction][0]
@@ -70,18 +75,21 @@ class SnakeEngine:
         
         if self._head == self._apple:
             self._new_apple()
-            self.map_matrix[self._apple[1]][self._apple[0]] = 1
+            self.map_matrix[self._apple[1]][self._apple[0]] = self._apple_rep
+            self.score += 1
+            if self.score > self.high_score:
+                self.high_score = self.score
 
         elif (self._head in self._tail) or (self._head[0] in (-1, self._map_size)) or (self._head[1] in (-1, self._map_size)):
             self._lost()
 
         else:
-            self.map_matrix[self._tail[0][1]][self._tail[0][0]] = 0
+            self.map_matrix[self._tail[0][1]][self._tail[0][0]] = self._empty_field_rep
             self._tail.pop(0)
 
         
         if not self.is_lost:
-            self.map_matrix[self._head[1]][self._head[0]] = 2
+            self.map_matrix[self._head[1]][self._head[0]] = self._head_rep
 
 
     def _lost(self):

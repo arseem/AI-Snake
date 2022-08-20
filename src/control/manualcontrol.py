@@ -1,15 +1,11 @@
 import threading
 import keyboard
 
-from settings import SnakeSettings
-
-MOVE_INTERVAL = SnakeSettings.MOVE_INTERVAL
-
-
 class ManualControl:
 
-    def __init__(self, engine):
+    def __init__(self, engine, move_interval):
         self.s = engine
+        self.move_interval = move_interval
         self.detect_key = threading.Thread(target=self.get_direction, daemon=True)
         self.detect_key.start()
         self.direction = self.s._direction
@@ -42,7 +38,7 @@ class ManualControl:
 
         
     def move(self):
-        t = threading.Timer(MOVE_INTERVAL, self.move)
+        t = threading.Timer(self.move_interval, self.move)
         t.daemon = True
         t.start()
         if not self.s.is_lost and not self.s.first_move:
