@@ -1,3 +1,4 @@
+from tkinter import N
 import numpy as np
 import pygame as pg
 import pygame_gui
@@ -13,6 +14,7 @@ class VisualizeBoard:
         self.s = engine
         self.last_score = -1
         self.size_to_change = False
+        self.draw_vision_lines = False
 
         self.clock = pg.time.Clock()
         
@@ -29,6 +31,8 @@ class VisualizeBoard:
         start_val = 10 if self.brain else -np.log(self.control_engine.move_interval)
         self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 10), start_value=start_val, manager=self.manager, object_id='speed')
         self.map_size_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*122, self.fig_size*100, self.fig_size*5), value_range=(4, 50), start_value=40, manager=self.manager, object_id='map_size')
+        self.mutation_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*105, self.fig_size*90, self.fig_size*5), value_range=(0, self.brain.n_parents*10), start_value=2, manager=self.manager, object_id='mutation')
+        self.lines_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*120, self.fig_size*115, self.fig_size*20, self.fig_size*10), text='VISION LINES', manager=self.manager, object_id='lines_button')
         pg.display.set_caption('Artificially Unintelligent Snake [ A U S ]')
         self._update_surface(data)
 
@@ -41,11 +45,13 @@ class VisualizeBoard:
     def _change_map_size(self, val):
         self.size_to_change = val
 
+    def _change_mutation(self, val):
+        self.brain.mutation_factor = val
+
     
     def _update_surface(self, data):
         surf = pg.surfarray.make_surface(data.T)
         surf = pg.transform.scale(surf, (self.fig_size*100, self.fig_size*100))
-        pg.draw.rect(surf, (255, 255, 255), (0, 0, self.fig_size*100, self.fig_size*100), 1)
         speed_label = self.font_small.render('SPEED', 1, (255, 255, 255))
         speed_label_rect = speed_label.get_rect(center=(self.fig_size*60, self.fig_size*116.5))
         map_size_label = self.font_small.render(f'MAP SIZE ({self.map_size_slider.current_value})', 1, (255, 255, 255))
@@ -60,6 +66,30 @@ class VisualizeBoard:
             self.display.blit(score, (self.fig_size*120, self.fig_size*15))
 
         if self.brain:
+            x_h, y_h = (self.fig_size*100/self.s._map_size * self.s._head[0] + self.fig_size*100/self.s._map_size/2, self.fig_size*100/self.s._map_size * self.s._head[1] + self.fig_size*100/self.s._map_size/2)
+            vision_data = self.control_engine.vision_data
+            if vision_data and self.draw_vision_lines:
+                head_xy = (x_h, y_h)
+                w = (0, y_h)
+                e = (self.fig_size*100, y_h)
+                n = (x_h, 0)
+                s = (x_h, self.fig_size*100)
+                nw = (x_h-self.fig_size*100, y_h-self.fig_size*100)
+                ne = (x_h+self.fig_size*100, y_h-self.fig_size*100)
+                sw = (x_h-self.fig_size*100, y_h+self.fig_size*100)
+                se = (x_h+self.fig_size*100, y_h+self.fig_size*100)
+                
+                pg.draw.line(surf, 100 if vision_data[1]['w'] else (0, 255, 38) if vision_data[2]['w'] else (231, 235, 204), head_xy, w, width=1) 
+                pg.draw.line(surf, 100 if vision_data[1]['e'] else (0, 255, 38) if vision_data[2]['e'] else (231, 235, 204), head_xy, e, width=1)
+                pg.draw.line(surf, 100 if vision_data[1]['n'] else (0, 255, 38) if vision_data[2]['n'] else (231, 235, 204), head_xy, n, width=1) 
+                pg.draw.line(surf, 100 if vision_data[1]['s'] else (0, 255, 38) if vision_data[2]['s'] else (231, 235, 204), head_xy, s, width=1)
+                pg.draw.line(surf, 100 if vision_data[1]['nw'] else (0, 255, 38) if  vision_data[2]['nw'] else (231, 235, 204), head_xy, nw, width=1)  
+                pg.draw.line(surf, 100 if vision_data[1]['ne'] else (0, 255, 38) if  vision_data[2]['ne'] else (231, 235, 204), head_xy, ne, width=1)  
+                pg.draw.line(surf, 100 if vision_data[1]['sw'] else (0, 255, 38) if  vision_data[2]['sw'] else (231, 235, 204), head_xy, sw, width=1)  
+                pg.draw.line(surf, 100 if vision_data[1]['se'] else (0, 255, 38) if  vision_data[2]['se'] else (231, 235, 204), head_xy, se, width=1)  
+            
+            pg.draw.rect(surf, (255, 255, 255), (0, 0, self.fig_size*100, self.fig_size*100), 1)
+
             break_text = self.font_small.render(f'______________________________', 1, (255, 255, 255))
             n_gen = self.font_small.render(f'GENERATION:  {self.brain.gen_num} / {self.brain.n_gen}', 1, (255, 255, 255))
             n_ind = self.font_small.render(f'INDIVIDUAL:  {self.brain.ind_num} / {self.brain.n_in_gen}', 1, (255, 255, 255))
@@ -68,6 +98,9 @@ class VisualizeBoard:
             h_fit_o = self.font_small.render(f'        OVERALL:  {self.brain.highest_fitness[0]} (GEN {self.brain.highest_fitness[1]})', 1, (255, 255, 255))
             h_fit_g = self.font_small.render(f'    CURRENT GEN:  {self.brain.highest_fitness_gen}', 1, (255, 255, 255))
             c_fit = self.font_small.render(f'LAST FITNESS:     {self.brain.last_fitness}', 1, (255, 255, 255))
+
+            mut_label = self.font_small.render(f'MUTATION FACTOR ({self.brain.mutation_factor})', 1, (255, 255, 255))
+            mut_rect = map_size_label.get_rect(center=(self.fig_size*160, self.fig_size*107.5))
             
             self.display.blit(break_text, (self.fig_size*120, self.fig_size*17.5))
             self.display.blit(n_gen, (self.fig_size*120, self.fig_size*25))
@@ -83,6 +116,8 @@ class VisualizeBoard:
         self.manager.draw_ui(self.display)
         self.display.blit(speed_label, speed_label_rect)
         self.display.blit(map_size_label, map_size_rect)
+        if self.brain:
+            self.display.blit(mut_label, mut_rect)
         pg.display.update()
 
 
@@ -114,6 +149,12 @@ class VisualizeBoard:
 
                     if event.ui_object_id == 'map_size':
                         self._change_map_size(self.map_size_slider.current_value)
+
+                    if event.ui_object_id == 'mutation':
+                        self._change_mutation(self.mutation_slider.current_value)
+
+                    if event.ui_object_id == 'lines_button':
+                        self.draw_vision_lines = not self.draw_vision_lines
 
                 self.manager.process_events(event)
 

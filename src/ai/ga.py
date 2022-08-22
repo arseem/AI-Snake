@@ -11,7 +11,7 @@ import time
 
 class GA():
 
-    def __init__(self, engine, control_engine, model, n_in_generation:int, n_generation:int, n_parents=False, fast_mode=False, populations_path='./!POPULATIONS/', auto_change_map_size=False, print_info=True):
+    def __init__(self, engine, control_engine, model, n_in_generation:int, n_generation:int, n_parents=False, mutation_factor=2, fast_mode=False, populations_path='./!POPULATIONS/', auto_change_map_size=False, print_info=True):
         self.n_in_gen = n_in_generation
         self.n_gen = n_generation
 
@@ -21,6 +21,7 @@ class GA():
 
         self.n_parents = n_parents if n_parents else self._compute_n_parents()
 
+        self.mutation_factor = mutation_factor
         self.time_delay = 0
         self.s = engine
         self.given_map_size = self.s._map_size
@@ -205,22 +206,29 @@ class GA():
 
                     for layer1, layer2 in zip(parent1, parent2):
                         pivot = len(layer1)//2
-                        if layer1.ndim==1:
-                            new_layer1 = np.hstack([layer1[:pivot], layer2[pivot:]])
-                            new_layer2 = np.hstack([layer2[:pivot], layer1[pivot:]])
+                        # if layer1.ndim==1:
+                        #     new_layer1 = np.hstack([layer1[:pivot], layer2[pivot:]])
+                        #     new_layer2 = np.hstack([layer2[:pivot], layer1[pivot:]])
                         
-                        else:
-                            new_layer1 = np.zeros((len(layer1),len(layer1[0])))
-                            new_layer2 = np.zeros((len(layer1),len(layer1[0])))
-                            for l in range(len(layer2)):
-                                sublayer1, sublayer2 = layer1[l], layer2[l]
+                        # else:
+                        #     new_layer1 = np.zeros((len(layer1),len(layer1[0])))
+                        #     new_layer2 = np.zeros((len(layer1),len(layer1[0])))
+                        #     for l in range(len(layer2)):
+                        #         sublayer1, sublayer2 = layer1[l], layer2[l]
                                 
-                                new_layer1[l] = np.hstack([sublayer1[:pivot], sublayer2[pivot:]])
-                                new_layer1[l][random.randint(0, len(new_layer1[l])-1)] = random.uniform(-1, 1)
-                                new_layer1[l][random.randint(0,len(new_layer1[l])-1)] = random.uniform(-1, 1)
+                        #         new_layer1[l] = np.hstack([sublayer1[:pivot], sublayer2[pivot:]])
+                        #         new_layer1[l][random.randint(0, len(new_layer1[l])-1)] = random.uniform(-1, 1)
+                        #         new_layer1[l][random.randint(0, len(new_layer1[l])-1)] = random.uniform(-1, 1)
 
-                                new_layer2[l] = np.hstack([sublayer2[:pivot], sublayer1[pivot:]])
-                                new_layer2[l][random.randint(0, len(new_layer1[l])-1)] = random.uniform(-1, 1)
+                        #         new_layer2[l] = np.hstack([sublayer2[:pivot], sublayer1[pivot:]])
+                        #         new_layer2[l][random.randint(0, len(new_layer1[l])-1)] = random.uniform(-1, 1)
+                        #         new_layer2[l][random.randint(0, len(new_layer1[l])-1)] = random.uniform(-1, 1)
+                        
+                        layer1[pivot:], layer2[pivot:] = layer2[pivot:], layer1[pivot:]
+                        new_layer1, new_layer2 = layer1, layer2
+                        for l in range(len(new_layer1)):
+                            for _ in range(self.mutation_factor):
+                                new_layer1[l][random.randint(0, len(new_layer1[l])-1)] = random.uniform(-1, 1)
                                 new_layer2[l][random.randint(0, len(new_layer1[l])-1)] = random.uniform(-1, 1)
 
                         new_parent_1.append(new_layer1)

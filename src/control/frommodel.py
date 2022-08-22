@@ -8,6 +8,7 @@ class FromModel:
         self.s = engine
         self.move_interval = move_interval
         self.vision_engine = vision
+        self.vision_data = False
         self.directions_dict = {0:'U', 1:'D', 2:'L', 3:'R'}
 
     def load_model(self, model):
@@ -40,10 +41,10 @@ class FromModel:
         t.start()
 
     def _move_for_learning(self):
-        vision_data = self.vision_engine.get_distances(self.s.map_matrix)
+        self.vision_data = self.vision_engine.get_distances(self.s.map_matrix)
         direction_data = [1 if self.s._direction==v else 0 for v in self.directions_dict.values()]
         
-        data_combined = data_prep.from_vision(vision_data)
+        data_combined = data_prep.from_vision(self.vision_data)
         data_combined.extend(direction_data)
         data_for_model = np.array(data_combined, ndmin=2)
 
