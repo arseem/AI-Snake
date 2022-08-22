@@ -12,7 +12,7 @@ class FromModel:
 
     def load_model(self, model):
         self.model = model
-        model.model.summary()
+        #model.model.summary()
         
     def move(self):
         if not self.s.is_lost:
@@ -38,3 +38,18 @@ class FromModel:
         t = threading.Timer(self.move_interval, self.move)
         #t.daemon = True
         t.start()
+
+    def _move_for_learning(self):
+        vision_data = self.vision_engine.get_distances(self.s.map_matrix)
+        direction_data = [1 if self.s._direction==v else 0 for v in self.directions_dict.values()]
+        
+        data_combined = data_prep.from_vision(vision_data)
+        data_combined.extend(direction_data)
+        data_for_model = np.array(data_combined, ndmin=2)
+
+        move_predict = np.argmax(self.model.predict(data_for_model))
+        move = self.directions_dict[move_predict]
+
+        self.s.make_move(move)
+        
+        return move, data_for_model

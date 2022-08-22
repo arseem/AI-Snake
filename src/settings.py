@@ -12,3 +12,11 @@ class GuiSettings:
     FIG_SIZE = 5
     COLORS = ['grey', 'r', 'w', 'g']
 
+
+@dataclass
+class GASettings:
+    N_GENERATIONS = 300
+    N_IN_GENERATION = 200
+    POPULATIONS_PATH = './populations/'
+    N_PARENTS = 10
+

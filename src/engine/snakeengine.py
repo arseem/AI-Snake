@@ -4,7 +4,7 @@ import random
 
 class SnakeEngine:
 
-    def __init__(self, map_size:int, apples_list:list=[], starting_points:list=[], high_score:int=0, representations:tuple=(0, 1, 2, 3)):
+    def __init__(self, map_size:int, apples_list:list=[], starting_points:list=[], high_score:int=0, representations:tuple=(0, 1, 2, 3), max_without_apple=False):
         self._map_size:int = map_size
         self._apples_list = apples_list
         self._starting_points = starting_points
@@ -14,6 +14,12 @@ class SnakeEngine:
         self._head_rep = representations[2]
         self._tail_rep = representations[3]
 
+        self.moves_without_apple = 0
+        if max_without_apple:
+            self.max_without_apple = max_without_apple
+        else:
+            self.max_without_apple = map_size*5
+
         self._directions_dict:dict[str:list] = {'U':(0, -1), 'D':(0, 1), 'L':(-1, 0), 'R':(1, 0)}
 
         self.score = 0
@@ -21,17 +27,13 @@ class SnakeEngine:
         self.is_lost = False
         self.first_move = True
 
-        self._initalize_game()
+        self._initialize_game()
 
 
-    def _initalize_game(self):
+    def _initialize_game(self):
         self.map_matrix:np.matrix = np.zeros((self._map_size, self._map_size), dtype=int)
+        self.moves_without_apple = 0
         self.score = 0
-
-        #   0 - empty field
-        #   1 - apple
-        #   2 - snake's head
-        #   3 - snake's tail
 
         #   indexes as [x, y]
         if not self._starting_points:
@@ -77,15 +79,17 @@ class SnakeEngine:
             self._new_apple()
             self.map_matrix[self._apple[1]][self._apple[0]] = self._apple_rep
             self.score += 1
+            self.moves_without_apple = 0
             if self.score > self.high_score:
                 self.high_score = self.score
 
-        elif (self._head in self._tail) or (self._head[0] in (-1, self._map_size)) or (self._head[1] in (-1, self._map_size)):
+        elif (self._head in self._tail) or (self._head[0] in (-1, self._map_size)) or (self._head[1] in (-1, self._map_size)) or self.moves_without_apple==self.max_without_apple:
             self._lost()
 
         else:
             self.map_matrix[self._tail[0][1]][self._tail[0][0]] = self._empty_field_rep
             self._tail.pop(0)
+            self.moves_without_apple += 1
 
         
         if not self.is_lost:
@@ -94,7 +98,7 @@ class SnakeEngine:
 
     def _lost(self):
         self.is_lost = True
-        self._initalize_game()
+        self._initialize_game()
 
     
     def make_move(self, direction:str):

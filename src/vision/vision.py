@@ -1,21 +1,15 @@
 import numpy as np
 
-
-TAIL = 3
-HEAD = 2
-APPLE = 1
-
-
 class Vision:
 
-    def __init__(self, n_of_directions=8):
+    def __init__(self, n_of_directions=8, representations:tuple=(0, 1, 2, 3)):
         if n_of_directions not in (4, 8, 16):
             print('Number of directions must be 4, 8 or 16\nSetting number of directions to 8')
             n_of_directions = 8
 
         self.n_of_directions = n_of_directions
 
-        self.parts_dict = {'head': HEAD, 'tail': TAIL, 'apple': APPLE}
+        self.parts_dict = {'head': representations[2], 'tail': representations[3], 'apple': representations[1]}
 
 
     def get_distances(self, map_matrix:np.ndarray, head:tuple=()) -> tuple[dict, dict, dict]:
