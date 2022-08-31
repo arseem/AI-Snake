@@ -19,16 +19,15 @@ class Model:
         
         model = keras.Sequential()
         
-        model.add(keras.layers.Dense(n_nodes_input, input_shape=(n_nodes_input,), bias_initializer=bias_initializer))
+        model.add(keras.layers.Input(n_nodes_input))
 
         for n in n_nodes_hidden:
-            model.add(keras.layers.Dense(n, activation=hidden_activation, bias_initializer=bias_initializer))
+            model.add(keras.layers.Dense(n, activation=hidden_activation, bias_initializer=bias_initializer, kernel_initializer=tf.keras.initializers.GlorotUniform, trainable=False))
 
-        model.add(keras.layers.Dense(n_nodes_output, activation=output_activation, bias_initializer=bias_initializer))
-
+        model.add(keras.layers.Dense(n_nodes_output, activation=output_activation, bias_initializer=bias_initializer, kernel_initializer=tf.keras.initializers.GlorotUniform, trainable=False))
+        model.summary()
         self.model = model
-        self.model.compile(optimizer = keras.optimizers.Adam())
 
     def predict(self, data:list):
-        return self.model.predict(data, verbose=0)
+        return self.model(data)
 

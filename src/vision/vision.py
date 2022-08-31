@@ -2,12 +2,16 @@ import numpy as np
 
 class Vision:
 
-    def __init__(self, n_of_directions=8, representations:tuple=(0, 1, 2, 3)):
+    def __init__(self, n_of_directions=8, representations:tuple=(0, 1, 2, 3), mode:str='bool'):
         if n_of_directions not in (4, 8, 16):
             print('Number of directions must be 4, 8 or 16\nSetting number of directions to 8')
             n_of_directions = 8
 
         self.n_of_directions = n_of_directions
+        if mode not in ('bool', 'distance'):
+            raise Exception('Unknown mode')
+
+        self.mode = mode
 
         self.parts_dict = {'head': representations[2], 'tail': representations[3], 'apple': representations[1]}
 
@@ -20,9 +24,9 @@ class Vision:
         size = len(map_matrix)        
 
         n_wall = head[1]
-        s_wall = size - 1 - head[1]
+        s_wall = size - 1 - head[1] 
         w_wall = head[0]
-        e_wall = size - 1 - head[0]
+        e_wall = size - 1 - head[0] 
         nw_wall = 1.4*np.min((n_wall, w_wall))
         ne_wall = 1.4*np.min((n_wall, e_wall))
         sw_wall = 1.4*np.min((s_wall, w_wall))
@@ -53,10 +57,19 @@ class Vision:
             for dir, value in zip(directions, directions.values()):
                 if not -1 in value:
                     if map_matrix[value[1]][value[0]] == self.parts_dict['tail']:
-                        tails[dir] = True
+                        if self.mode == 'bool':
+                            tails[dir] = True
+                        
+                        elif self.mode == 'distance':
+                            tails[dir] = np.sqrt((head[0]-value[0])**2 + (head[1]-value[1])**2)
 
                     if map_matrix[value[1]][value[0]] == self.parts_dict['apple']:
-                        apples[dir] = True
+                        if self.mode == 'bool':
+                            apples[dir] = True
+
+                        elif self.mode == 'distance':
+                            apples[dir] = np.sqrt((head[0]-value[0])**2 + (head[1]-value[1])**2)
+
 
 
         return walls, tails, apples
@@ -68,8 +81,8 @@ class Vision:
 #     [
 #         [3,3,3,0,0,0],
 #         [3,0,3,3,3,0],
-#         [3,0,0,0,2,0],
 #         [3,0,0,0,0,0],
+#         [3,0,0,2,0,0],
 #         [3,0,0,0,0,0],
 #         [0,0,0,0,0,1],
 #     ]

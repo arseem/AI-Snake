@@ -33,10 +33,10 @@ def play_snake():
 
 def play_ai_snake():
     snake = SnakeEngine(MAP_SIZE, representations=REPRESENTATIONS)
-    vision = Vision(representations=REPRESENTATIONS)
+    vision = Vision(representations=REPRESENTATIONS, mode='bool')
     control = FromModel(snake, MOVE_INTERVAL, vision)
-    model = Model(28, 4, [20, 12], 'relu', 'sigmoid', biases=True)
-    brain = GA(snake, control, model, N_IN_GENERATION, N_GENERATIONS, populations_path=P_PATH, print_info=False)
+    model = Model(32, 4, [20, 12], 'relu', 'sigmoid', biases=True)
+    brain = GA(snake, control, model, N_IN_GENERATION, N_GENERATIONS, populations_path=P_PATH, print_info=True)
     board = VisualizeBoard(snake, FIG_SIZE, control, brain)
 
     brain.run_generation()

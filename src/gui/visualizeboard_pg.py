@@ -26,13 +26,16 @@ class VisualizeBoard:
         pg.font.init()
         self.font = pg.font.SysFont('Courier New', int(self.fig_size*5.5))
         self.font_small = pg.font.SysFont('Courier New', int(self.fig_size*3.5))
+        self.font_smallest = pg.font.SysFont('Courier New', int(self.fig_size*2))
         self.display = pg.display.set_mode((self.fig_size*220, self.fig_size*130))
         self.manager = pygame_gui.UIManager((self.fig_size*220, self.fig_size*130))
         start_val = 10 if self.brain else -np.log(self.control_engine.move_interval)
         self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 10), start_value=start_val, manager=self.manager, object_id='speed')
-        self.map_size_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*122, self.fig_size*100, self.fig_size*5), value_range=(4, 50), start_value=40, manager=self.manager, object_id='map_size')
-        self.mutation_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*105, self.fig_size*90, self.fig_size*5), value_range=(0, self.brain.n_parents*10), start_value=2, manager=self.manager, object_id='mutation')
-        self.lines_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*120, self.fig_size*115, self.fig_size*20, self.fig_size*10), text='VISION LINES', manager=self.manager, object_id='lines_button')
+        self.map_size_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*122, self.fig_size*100, self.fig_size*5), value_range=(4, 50), start_value=self.s._map_size, manager=self.manager, object_id='map_size')
+        if self.brain:
+            self.mutation_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*105, self.fig_size*90, self.fig_size*5), value_range=(0, self.brain.n_parents*10), start_value=2, manager=self.manager, object_id='mutation')
+            self.parents_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*97, self.fig_size*90, self.fig_size*5), value_range=(2, self.brain.n_in_gen), start_value=self.brain.n_parents, manager=self.manager, object_id='parents')
+        self.lines_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*120, self.fig_size*115, self.fig_size*25, self.fig_size*10), text='VISION LINES', manager=self.manager, object_id='lines_button')
         pg.display.set_caption('Artificially Unintelligent Snake [ A U S ]')
         self._update_surface(data)
 
@@ -40,13 +43,16 @@ class VisualizeBoard:
     def _change_speed(self, val):
         self.control_engine.move_interval = np.exp(-val)
         if self.brain:
-            self.brain.time_delay = 1 - val/10
+            self.brain.time_delay = (1 - val)/10
         
     def _change_map_size(self, val):
         self.size_to_change = val
 
     def _change_mutation(self, val):
         self.brain.mutation_factor = val
+
+    def _change_n_parents(self, val):
+        self.brain.n_parents = val
 
     
     def _update_surface(self, data):
@@ -99,8 +105,16 @@ class VisualizeBoard:
             h_fit_g = self.font_small.render(f'    CURRENT GEN:  {self.brain.highest_fitness_gen}', 1, (255, 255, 255))
             c_fit = self.font_small.render(f'LAST FITNESS:     {self.brain.last_fitness}', 1, (255, 255, 255))
 
+            n_i_print = [round(d, 2) for d in self.brain.data_check]
+            for d in (8, 17, 26, 31):
+                n_i_print.insert(d, '|')
+            n_i_print = str(n_i_print).replace("'", '').replace(',', '')
+            neural_input = self.font_smallest.render(f'{n_i_print}', 1, (255, 255, 255))
+
             mut_label = self.font_small.render(f'MUTATION FACTOR ({self.brain.mutation_factor})', 1, (255, 255, 255))
             mut_rect = map_size_label.get_rect(center=(self.fig_size*160, self.fig_size*107.5))
+            parents_label = self.font_small.render(f'NUMBER OF PARENTS ({self.brain.n_parents})', 1, (255, 255, 255))
+            parents_rect = map_size_label.get_rect(center=(self.fig_size*157.5, self.fig_size*99.5))
             
             self.display.blit(break_text, (self.fig_size*120, self.fig_size*17.5))
             self.display.blit(n_gen, (self.fig_size*120, self.fig_size*25))
@@ -111,6 +125,7 @@ class VisualizeBoard:
             self.display.blit(h_fit_o, (self.fig_size*120, self.fig_size*50))
             self.display.blit(h_fit_g, (self.fig_size*120, self.fig_size*55))
             self.display.blit(c_fit, (self.fig_size*120, self.fig_size*60))
+            self.display.blit(neural_input, (self.fig_size*10, self.fig_size*5))
             
         self.display.blit(surf, (self.fig_size*10, self.fig_size*10))
         self.manager.draw_ui(self.display)
@@ -118,6 +133,7 @@ class VisualizeBoard:
         self.display.blit(map_size_label, map_size_rect)
         if self.brain:
             self.display.blit(mut_label, mut_rect)
+            self.display.blit(parents_label, parents_rect)
         pg.display.update()
 
 
@@ -152,6 +168,9 @@ class VisualizeBoard:
 
                     if event.ui_object_id == 'mutation':
                         self._change_mutation(self.mutation_slider.current_value)
+
+                    if event.ui_object_id == 'parents':
+                        self._change_n_parents(self.parents_slider.current_value)
 
                     if event.ui_object_id == 'lines_button':
                         self.draw_vision_lines = not self.draw_vision_lines

@@ -41,10 +41,12 @@ class SnakeEngine:
             self._tail:list[list] = [random.choice([[self._head[0], self._head[1]+1], [self._head[0], self._head[1]-1], [self._head[0]+1, self._head[1]], [self._head[0]-1, self._head[1]]])]
 
         else:
-            self._head = self._starting_points[0]
+            self._head = list(self._starting_points[0])
             self._tail = [self._starting_points[1]]
 
         self._direction:str = 'U' if self._head[1]-self._tail[0][1]==-1 else 'D' if self._head[1]-self._tail[0][1]==1 else 'L' if self._head[0]-self._tail[0][0]==-1 else 'R'
+        self._moves = [self._direction]
+        self.tail_direction = self._moves[-len(self._tail)]
 
         self._new_apple()
 
@@ -74,6 +76,9 @@ class SnakeEngine:
         self._tail.append(list(self._head))
         self._head[0] += self._directions_dict[self._direction][0]
         self._head[1] += self._directions_dict[self._direction][1]
+
+        self._moves.append(self._direction)
+        self.tail_direction = self._moves[-len(self._tail)]
         
         if self._head == self._apple:
             self._new_apple()
@@ -107,8 +112,8 @@ class SnakeEngine:
         if direction not in self._directions_dict.keys():
             raise Exception('Wrong direction indicator')
 
-        if {direction, self._direction} in [{'U', 'D'}, {'R', 'L'}]:
-            direction = self._direction
+        #if {direction, self._direction} in [{'U', 'D'}, {'R', 'L'}]:
+            #direction = self._direction
 
         self._direction = direction
         self._tick()
