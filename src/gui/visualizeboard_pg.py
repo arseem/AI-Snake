@@ -27,14 +27,16 @@ class VisualizeBoard:
         self.font = pg.font.SysFont('Courier New', int(self.fig_size*5.5))
         self.font_small = pg.font.SysFont('Courier New', int(self.fig_size*3.5))
         self.font_smallest = pg.font.SysFont('Courier New', int(self.fig_size*2))
-        self.display = pg.display.set_mode((self.fig_size*220, self.fig_size*130))
-        self.manager = pygame_gui.UIManager((self.fig_size*220, self.fig_size*130))
+        self.display = pg.display.set_mode((self.fig_size*270, self.fig_size*130), pg.RESIZABLE)
+        self.manager = pygame_gui.UIManager((self.fig_size*270, self.fig_size*130))
         start_val = 10 if self.brain else -np.log(self.control_engine.move_interval)
-        self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 10), start_value=start_val, manager=self.manager, object_id='speed')
         self.map_size_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*122, self.fig_size*100, self.fig_size*5), value_range=(4, 50), start_value=self.s._map_size, manager=self.manager, object_id='map_size')
         if self.brain:
             self.mutation_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*105, self.fig_size*90, self.fig_size*5), value_range=(0, self.brain.n_parents*10), start_value=2, manager=self.manager, object_id='mutation')
             self.parents_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*97, self.fig_size*90, self.fig_size*5), value_range=(2, self.brain.n_in_gen), start_value=self.brain.n_parents, manager=self.manager, object_id='parents')
+            self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 100), start_value=100, manager=self.manager, object_id='speed')
+        else:
+            self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 10), start_value=start_val, manager=self.manager, object_id='speed')
         self.lines_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*120, self.fig_size*115, self.fig_size*25, self.fig_size*10), text='VISION LINES', manager=self.manager, object_id='lines_button')
         pg.display.set_caption('Artificially Unintelligent Snake [ A U S ]')
         self._update_surface(data)
@@ -43,7 +45,7 @@ class VisualizeBoard:
     def _change_speed(self, val):
         self.control_engine.move_interval = np.exp(-val)
         if self.brain:
-            self.brain.time_delay = (1 - val)/10
+            self.brain.time_delay = (100-val)/100
         
     def _change_map_size(self, val):
         self.size_to_change = val
@@ -105,11 +107,12 @@ class VisualizeBoard:
             h_fit_g = self.font_small.render(f'    CURRENT GEN:  {self.brain.highest_fitness_gen}', 1, (255, 255, 255))
             c_fit = self.font_small.render(f'LAST FITNESS:     {self.brain.last_fitness}', 1, (255, 255, 255))
 
-            n_i_print = [round(d, 2) for d in self.brain.data_check]
-            for d in (8, 17, 26, 31):
-                n_i_print.insert(d, '|')
-            n_i_print = str(n_i_print).replace("'", '').replace(',', '')
-            neural_input = self.font_smallest.render(f'{n_i_print}', 1, (255, 255, 255))
+            len_inp = len(self.brain.data_check)
+            inp_centers = []
+            for i, v in enumerate(self.brain.data_check):
+                pg.draw.circle(self.display, (int(255*v), 0, 0) if v>=0 else (0, 0, 0), (self.fig_size*228, int(1.8*self.fig_size*120/len_inp)+int(i*self.fig_size*120/len_inp)), int(self.fig_size))
+                inp_centers.append((self.fig_size*228, int(1.8*self.fig_size*120/len_inp)+int(i*self.fig_size*120/len_inp)))
+                self.display.blit(self.font_smallest.render(str(round(v, 2) if v not in (0, 1, -1) else '   1' if v==1 else '  -1' if v==-1 else '   0'), 1, (255, 255, 255)), (self.fig_size*220, int(1.8*0.9*self.fig_size*120/len_inp)+int(i*self.fig_size*120/len_inp)))
 
             mut_label = self.font_small.render(f'MUTATION FACTOR ({self.brain.mutation_factor})', 1, (255, 255, 255))
             mut_rect = map_size_label.get_rect(center=(self.fig_size*160, self.fig_size*107.5))
@@ -125,7 +128,6 @@ class VisualizeBoard:
             self.display.blit(h_fit_o, (self.fig_size*120, self.fig_size*50))
             self.display.blit(h_fit_g, (self.fig_size*120, self.fig_size*55))
             self.display.blit(c_fit, (self.fig_size*120, self.fig_size*60))
-            self.display.blit(neural_input, (self.fig_size*10, self.fig_size*5))
             
         self.display.blit(surf, (self.fig_size*10, self.fig_size*10))
         self.manager.draw_ui(self.display)
@@ -143,12 +145,17 @@ class VisualizeBoard:
             self.size_to_change = False
             self.s._initialize_game()
 
-        lost1 = self.font.render('YOU LOST', 1, (255, 255, 255))
-        lost1_rect = lost1.get_rect(center=(self.fig_size*60, self.fig_size*55))
-        lost2 = self.font.render('PRESS SPACEBAR TO RESTART', 1, (255, 255, 255))
-        lost2_rect = lost2.get_rect(center=(self.fig_size*60, self.fig_size*65))
-        self.display.blit(lost1, lost1_rect)
-        self.display.blit(lost2, lost2_rect)
+        if not self.brain:
+            lost1 = self.font.render('YOU LOST', 1, (255, 255, 255))
+            lost1_rect = lost1.get_rect(center=(self.fig_size*60, self.fig_size*55))
+            lost2 = self.font.render('PRESS SPACEBAR TO RESTART', 1, (255, 255, 255))
+            lost2_rect = lost2.get_rect(center=(self.fig_size*60, self.fig_size*65))
+            self.display.blit(lost1, lost1_rect)
+            self.display.blit(lost2, lost2_rect)
+        else:
+            lost1 = self.font.render(f'{self.brain.ind_num} / {self.brain.n_in_gen}', 1, (255, 255, 255))
+            lost1_rect = lost1.get_rect(center=(self.fig_size*60, self.fig_size*55))
+            self.display.blit(lost1, lost1_rect)
         pg.display.update()
 
 

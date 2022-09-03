@@ -18,15 +18,21 @@ class FromModel:
         
     def move(self):
         if not self.s.is_lost:
-            vision_data = self.vision_engine.get_distances(self.s.map_matrix)
-            direction_data = [1 if self.s._direction==v else 0 for v in self.directions_dict.values()]
+            self.vision_data = self.vision_engine.get_distances(self.s.map_matrix)
+            data_combined = data_prep.from_vision(self.vision_data, self.s._map_size, mode=self.vision_engine.mode)
             
-            data_combined = data_prep.from_vision(vision_data)
-            data_combined.extend(direction_data)
-            data_for_model = np.array(data_combined, ndmin=2)
+            if self.model.n_nodes_input > len(data_combined):
+                direction_data = [1 if self.s._direction==v else 0 for v in self.directions_dict.values()]
+                data_combined.extend(direction_data)
 
-            move_predict = np.argmax(self.model.predict(data_for_model))
-            move = self.directions_dict[move_predict]
+            if self.model.n_nodes_input > len(data_combined):
+                tail_direction_data = [1 if self.s.tail_direction==v else 0 for v in self.directions_dict.values()]
+                data_combined.extend(tail_direction_data)
+
+            data_for_model = np.array([data_combined])
+            prediction = self.model.predict(data_for_model)
+            move_predict = np.argmax(prediction, axis=1)
+            move = self.directions_dict[int(move_predict)]
 
             self.s.make_move(move)
             
@@ -43,12 +49,16 @@ class FromModel:
 
     def _move_for_learning(self):
         self.vision_data = self.vision_engine.get_distances(self.s.map_matrix)
-        direction_data = [1 if self.s._direction==v else 0 for v in self.directions_dict.values()]
-        tail_direction_data = [1 if self.s.tail_direction==v else 0 for v in self.directions_dict.values()]
-        
         data_combined = data_prep.from_vision(self.vision_data, self.s._map_size, mode=self.vision_engine.mode)
-        data_combined.extend(direction_data)
-        data_combined.extend(tail_direction_data)
+
+        if self.model.n_nodes_input > len(data_combined):
+            direction_data = [1 if self.s._direction==v else 0 for v in self.directions_dict.values()]
+            data_combined.extend(direction_data)
+
+        if self.model.n_nodes_input > len(data_combined):
+            tail_direction_data = [1 if self.s.tail_direction==v else 0 for v in self.directions_dict.values()]
+            data_combined.extend(tail_direction_data)
+
         #data_for_model = np.array(data_combined, ndmin=2)
         data_for_model = np.array([data_combined])
         prediction = self.model.predict(data_for_model)

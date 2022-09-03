@@ -84,7 +84,7 @@ class GA():
         #return round(n_moves+((2**score)+(score**2.1)*500) - ((score**1.2)*((0.25*n_moves)**1.3)))
         #return score**10/(n_moves/score) if score else n_moves
         #return 1000*score + n_moves
-        return round((score**10)/(n_moves/score)) if score else n_moves
+        return n_moves*n_moves*(2**score)
 
     
     def _run_generation(self):
@@ -304,10 +304,10 @@ class GA():
 
                             for r in range(rows):
                                 for c in range(cols):
-                                    new_offspring_1[l][r, c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(0, 1))
-                                    new_offspring_1[l][r, c] = 1 if new_offspring_1[l][r, c]>1 else new_offspring_1[l][r, c]
-                                    new_offspring_2[l][r, c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(0, 1))
-                                    new_offspring_2[l][r, c] = 1 if new_offspring_1[l][r, c]>1 else new_offspring_2[l][r, c]
+                                    new_offspring_1[l][r, c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(-1, 1))
+                                    #new_offspring_1[l][r, c] = 1-np.random.normal(0, 1) if new_offspring_1[l][r, c]>1 else new_offspring_1[l][r, c]
+                                    new_offspring_2[l][r, c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(-1, 1))
+                                    #new_offspring_2[l][r, c] = 1-np.random.normal(0, 1) if new_offspring_1[l][r, c]>1 else new_offspring_2[l][r, c]
                         
                         else:
                             cols = parent1[l].shape[0]
@@ -317,10 +317,10 @@ class GA():
                             new_offspring_2[l][:col] = parent1[l][:col]
 
                             for c in range(cols):
-                                new_offspring_1[l][c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(0, 1))
-                                new_offspring_1[l][c] = 1 if new_offspring_1[l][c]>1 else new_offspring_1[l][c]
-                                new_offspring_2[l][c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(0, 1))
-                                new_offspring_2[l][c] = 1 if new_offspring_1[l][c]>1 else new_offspring_2[l][c]
+                                new_offspring_1[l][c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(-1, 1))
+                                #new_offspring_1[l][c] = 1-np.random.normal(0, 1) if new_offspring_1[l][c]>1 else new_offspring_1[l][c]
+                                new_offspring_2[l][c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(-1, 1))
+                                #new_offspring_2[l][c] = 1-np.random.normal(0, 1) if new_offspring_1[l][c]>1 else new_offspring_2[l][c]
 
                     offspring.append(new_offspring_1)
                     offspring.append(new_offspring_2)

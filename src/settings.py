@@ -15,8 +15,8 @@ class GuiSettings:
 
 @dataclass
 class GASettings:
-    N_GENERATIONS = 1000
-    N_IN_GENERATION = 500
+    N_GENERATIONS = 3000
+    N_IN_GENERATION = 2000
     POPULATIONS_PATH = './populations/'
     N_PARENTS = False
 
