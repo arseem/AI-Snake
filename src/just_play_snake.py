@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from multiprocessing.sharedctypes import Value
 from control.manualcontrol import ManualControl
 from control.fromsave import FromSave
 from control.frommodel import FromModel
@@ -10,7 +9,6 @@ from vision.vision import Vision
 from ai.model import Model
 from ai.ga import GA
 from saving.saveshandler import SavesHandler
-import json
 
 from settings import SnakeSettings, GuiSettings, GASettings
 
@@ -36,7 +34,7 @@ class Setup:
 
 
 def play_snake():
-    snake = SnakeEngine(Setup.MAP_SIZE, representations=Setup.REPRESENTATIONS, allow_back_move=True)
+    snake = SnakeEngine(Setup.MAP_SIZE, representations=Setup.REPRESENTATIONS, allow_back_move=True, max_without_apple=10**10)
     key_grabber = ManualControl(snake, Setup.MOVE_INTERVAL)
     board = VisualizeBoard(snake, Setup.FIG_SIZE, key_grabber)
 
@@ -48,14 +46,9 @@ def play_saved_snake():
     save = SavesHandler()
 
     snake = SnakeEngine(Setup.MAP_SIZE, representations=Setup.REPRESENTATIONS)
-    vision = Vision(representations=Setup.REPRESENTATIONS, mode=Setup.VISION_MODE)
-    control = FromModel(snake, Setup.MOVE_INTERVAL, vision)
-    model = Model(Setup.NN_INPUT, Setup.NN_OUTPUT, Setup.NN_HIDDEN, Setup.NN_HIDDEN_ACTIVATION, Setup.NN_OUTPUT_ACTIVATION, biases=True)
+    control = FromSave(snake, Setup.MOVE_INTERVAL, save)
+    
     board = VisualizeBoard(snake, Setup.FIG_SIZE, control)
-    weights = ''
-    model.model.set_weights(weights)
-    control.load_model(model)
-    control.move()
     return(board.run_board())
 
 
@@ -65,23 +58,19 @@ def play_ai_snake():
     control = FromModel(snake, Setup.MOVE_INTERVAL, vision)
     model = Model(Setup.NN_INPUT, Setup.NN_OUTPUT, Setup.NN_HIDDEN, Setup.NN_HIDDEN_ACTIVATION, Setup.NN_OUTPUT_ACTIVATION, biases=True)
     brain = GA(snake, control, model, Setup.N_IN_GENERATION, Setup.N_GENERATIONS, populations_path=Setup.P_PATH, print_info=True)
-    board = VisualizeBoard(snake, Setup.FIG_SIZE, control, brain)
+    board = VisualizeBoard(snake, Setup.FIG_SIZE, control, brain=brain)
 
     brain.run_generation()
     #brain.t.join()
     return(board.run_board())
 
 
-if __name__=='__main__':
+def main():
     # with open('src/populations/2022_09_02 23_55_04_393604/gen_105.json') as f:
     #     gen = json.load(f)
     #     wei = gen['Individual_9']['Weights']
     #     start = gen['Individual_9']['Starting position']
     #     apples = gen['Individual_9']['Apples']
-
-    #play_saved_snake(wei)
-
-    # play_ai_snake()
 
     customizable_settings = [Setup.MAP_SIZE, Setup.N_IN_GENERATION, Setup.N_GENERATIONS, Setup.N_PARENTS, Setup.VISION_MODE, Setup.NN_INPUT, Setup.NN_OUTPUT, Setup.NN_HIDDEN, Setup.NN_HIDDEN_ACTIVATION, Setup.NN_OUTPUT_ACTIVATION, Setup.P_PATH]
 
@@ -118,4 +107,7 @@ if __name__=='__main__':
 
         if checksum == 0:
             break
+
+if __name__=='__main__':
+    main()
 

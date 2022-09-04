@@ -1,15 +1,19 @@
+from this import d
 import numpy as np
 import pandas as pd
+import threading
 from tkinter import filedialog, Tk
-import json
+import orjson as json
 import os
 
 
 class SavesHandler:
-    def __init__(self) -> None:
+    def __init__(self, sort_fit=True) -> None:
         self.path = None
         self.gen_index = 0
         self.ind_index = 0
+
+        self.sort_fit = sort_fit
 
         self.import_population()
 
@@ -24,7 +28,7 @@ class SavesHandler:
         self.get_path()
 
         with open(f'{self.path}/info.json') as f:
-            info_dict = json.load(f)['POPULATION INFO']
+            info_dict = json.loads(f.read())['POPULATION INFO']
             info_pd = pd.DataFrame(info_dict.values(), index=info_dict.keys(), columns=['POPULATION INFO'])
             print(info_pd)
 
@@ -33,14 +37,14 @@ class SavesHandler:
             self.population[i] = False
 
 
-    def import_generation(self, i):
+    def import_generation(self, i) -> list:
         if not self.population[i]:
             with open(f'{self.path}/gen_{i}.json') as f:
-                individuals = json.load(f)
+                individuals = json.loads(f.read())
                 gen_frame = pd.DataFrame(individuals, columns=individuals.keys())
-                gen_frame.sort_values('Fitness', axis=1, inplace=True, ascending=False)
+                gen_frame_sorted = gen_frame.sort_values('Fitness', axis=1, inplace=False, ascending=False)
 
-            self.population[i] = [gen_frame.iloc[:, 0]['Fitness'], gen_frame]
+            self.population[i] = [gen_frame_sorted.iloc[:, 0]['Fitness'], gen_frame_sorted if self.sort_fit else gen_frame]
 
         return self.population[i]
 
