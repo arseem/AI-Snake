@@ -1,7 +1,5 @@
-from this import d
 import numpy as np
 import pandas as pd
-import threading
 from tkinter import filedialog, Tk
 import orjson as json
 import os
