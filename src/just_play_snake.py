@@ -41,7 +41,7 @@ def play_snake():
     board = VisualizeBoard(snake, Setup.FIG_SIZE, key_grabber)
 
     key_grabber.move()
-    board.run_board()
+    return(board.run_board())
 
 
 def play_saved_snake():
@@ -56,7 +56,7 @@ def play_saved_snake():
     model.model.set_weights(weights)
     control.load_model(model)
     control.move()
-    board.run_board()
+    return(board.run_board())
 
 
 def play_ai_snake():
@@ -69,7 +69,7 @@ def play_ai_snake():
 
     brain.run_generation()
     #brain.t.join()
-    board.run_board()
+    return(board.run_board())
 
 
 if __name__=='__main__':
