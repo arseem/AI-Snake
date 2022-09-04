@@ -8,10 +8,12 @@ import os
 
 
 class SavesHandler:
-    def __init__(self, sort_fit=True) -> None:
+    def __init__(self, sort_fit=True, cache_gens=False) -> None:
         self.path = None
         self.gen_index = 0
         self.ind_index = 0
+
+        self.cache_gens = cache_gens
 
         self.sort_fit = sort_fit
 
@@ -32,21 +34,32 @@ class SavesHandler:
             info_pd = pd.DataFrame(info_dict.values(), index=info_dict.keys(), columns=['POPULATION INFO'])
             print(info_pd)
 
-        self.population = {}
-        for i in range(len(os.listdir(self.path))):
-            self.population[i] = False
+        if self.cache_gens:
+            self.population = {}
+            for i in range(len(os.listdir(self.path))):
+                self.population[i] = False
 
 
     def import_generation(self, i) -> list:
-        if not self.population[i]:
+        if self.cache_gens:
+            if not self.population[i]:
+                with open(f'{self.path}/gen_{i}.json') as f:
+                    individuals = json.loads(f.read())
+                    gen_frame = pd.DataFrame(individuals, columns=individuals.keys())
+                    gen_frame_sorted = gen_frame.sort_values('Fitness', axis=1, inplace=False, ascending=False)
+
+                self.population[i] = [gen_frame_sorted.iloc[:, 0]['Fitness'], gen_frame_sorted if self.sort_fit else gen_frame]
+
+            return self.population[i]
+
+        else:
             with open(f'{self.path}/gen_{i}.json') as f:
                 individuals = json.loads(f.read())
                 gen_frame = pd.DataFrame(individuals, columns=individuals.keys())
                 gen_frame_sorted = gen_frame.sort_values('Fitness', axis=1, inplace=False, ascending=False)
 
-            self.population[i] = [gen_frame_sorted.iloc[:, 0]['Fitness'], gen_frame_sorted if self.sort_fit else gen_frame]
+            return [gen_frame_sorted.iloc[:, 0]['Fitness'], gen_frame_sorted if self.sort_fit else gen_frame]
 
-        return self.population[i]
 
 
     def convert_weights(weights:list) -> np.array:
