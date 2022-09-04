@@ -1,4 +1,4 @@
-from tkinter import N
+from multiprocessing import managers
 import numpy as np
 import pygame as pg
 import pygame_gui
@@ -27,8 +27,12 @@ class VisualizeBoard:
         self.font = pg.font.SysFont('Courier New', int(self.fig_size*5.5))
         self.font_small = pg.font.SysFont('Courier New', int(self.fig_size*3.5))
         self.font_smallest = pg.font.SysFont('Courier New', int(self.fig_size*2))
-        self.display = pg.display.set_mode((self.fig_size*270, self.fig_size*130), pg.RESIZABLE)
-        self.manager = pygame_gui.UIManager((self.fig_size*270, self.fig_size*130))
+        if self.brain:
+            self.display = pg.display.set_mode((self.fig_size*270, self.fig_size*130), pg.RESIZABLE)
+            self.manager = pygame_gui.UIManager((self.fig_size*270, self.fig_size*130))
+        else:
+            self.display = pg.display.set_mode((self.fig_size*180, self.fig_size*130), pg.RESIZABLE)
+            self.manager = pygame_gui.UIManager((self.fig_size*180, self.fig_size*130))
         start_val = 10 if self.brain else -np.log(self.control_engine.move_interval)
         self.map_size_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*122, self.fig_size*100, self.fig_size*5), value_range=(4, 50), start_value=self.s._map_size, manager=self.manager, object_id='map_size')
         if self.brain:
@@ -38,6 +42,8 @@ class VisualizeBoard:
         else:
             self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 10), start_value=start_val, manager=self.manager, object_id='speed')
         self.lines_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*120, self.fig_size*115, self.fig_size*25, self.fig_size*10), text='VISION LINES', manager=self.manager, object_id='lines_button')
+        self.menu_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*150, self.fig_size*115, self.fig_size*25, self.fig_size*10), text='MENU', manager=self.manager, object_id='menu_button')
+
         pg.display.set_caption('Artificially Unintelligent Snake [ A U S ]')
         self._update_surface(data)
 
@@ -161,6 +167,7 @@ class VisualizeBoard:
 
     def run_board(self):
         running = True
+        output = 0
         while running:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -182,6 +189,14 @@ class VisualizeBoard:
                     if event.ui_object_id == 'lines_button':
                         self.draw_vision_lines = not self.draw_vision_lines
 
+                if event.type == pygame_gui.UI_BUTTON_PRESSED:
+                    if event.ui_object_id == 'menu_button':
+                        output = 1
+                        if self.brain:
+                            self.brain.n_gen = self.brain.gen_num
+                            self.brain.t.join()
+                        running = False
+
                 self.manager.process_events(event)
 
             if not self.s.is_lost:
@@ -194,3 +209,4 @@ class VisualizeBoard:
             self.manager.update(self.clock.tick(self.fps)/1000)
 
         pg.quit()
+        return output

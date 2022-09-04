@@ -4,7 +4,7 @@ import random
 
 class SnakeEngine:
 
-    def __init__(self, map_size:int, apples_list:list=[], starting_points:list=[], high_score:int=0, representations:tuple=(0, 1, 2, 3), max_without_apple=False):
+    def __init__(self, map_size:int, apples_list:list=[], starting_points:list=[], high_score:int=0, representations:tuple=(0, 1, 2, 3), max_without_apple=False, allow_back_move=False):
         self._map_size:int = map_size
         self._apples_list = apples_list
         self._starting_points = starting_points
@@ -13,6 +13,8 @@ class SnakeEngine:
         self._apple_rep = representations[1]
         self._head_rep = representations[2]
         self._tail_rep = representations[3]
+
+        self._allow_back_move = allow_back_move
 
         self.moves_without_apple = 0
         if max_without_apple:
@@ -112,8 +114,9 @@ class SnakeEngine:
         if direction not in self._directions_dict.keys():
             raise Exception('Wrong direction indicator')
 
-        #if {direction, self._direction} in [{'U', 'D'}, {'R', 'L'}]:
-            #direction = self._direction
+        if self._allow_back_move:
+            if {direction, self._direction} in [{'U', 'D'}, {'R', 'L'}]:
+                direction = self._direction
 
         self._direction = direction
         self._tick()

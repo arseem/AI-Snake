@@ -37,6 +37,7 @@ class GA():
         if fast_mode:
             self.control_engine.move_interval = 0
         self.model = model
+        self.info = ''
         self.population = self._init_population()
 
 
@@ -54,6 +55,7 @@ class GA():
         self.last_fitness = 0
         self.highest_fitness = (0, '-')
         self.highest_fitness_gen = 0
+        self.highest_fitness_gen_score = 0
         self.add_to_map = 2
         population = []
         self.timestamp = str(datetime.datetime.now())
@@ -64,6 +66,8 @@ class GA():
             'Number of generations':self.n_gen,
             'Individuals in generation': self.n_in_gen,
             'Number of parents': self.n_parents,
+            'Mutation factor': self.mutation_factor,
+            'Vision mode': self.control_engine.vision_engine.mode,
             'Neural Network architecture': [[self.model.n_nodes_input, (tuple([n for n in self.model.n_nodes_hidden]), self.model.hidden_activation), (self.model.n_nodes_output, self.model.output_activation)]]
         }
 
@@ -145,6 +149,7 @@ class GA():
                     while time.perf_counter() - one_move < self.time_delay:
                         a = 0
                         a += 1
+
                     #print(round(time.perf_counter() - one_move, 4))
 
                 #turns = set(list(moves))
@@ -152,6 +157,7 @@ class GA():
                 self.last_fitness = fit
                 if fit > self.highest_fitness_gen:
                     self.highest_fitness_gen = fit
+                    self.highest_fitness_gen_score = last_score
                 if fit > self.highest_fitness[0]:
                     self.highest_fitness = (fit, self.gen_num)
 
@@ -206,7 +212,7 @@ class GA():
             print("PARENTS:")
             print(parents.loc[['Index', 'Fitness', 'Score', 'Moves']])
 
-        if not self.gen_num==self.n_gen:
+        if not self.gen_num>=self.n_gen:
             self._run_generation()
 
 
@@ -305,9 +311,7 @@ class GA():
                             for r in range(rows):
                                 for c in range(cols):
                                     new_offspring_1[l][r, c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(-1, 1))
-                                    #new_offspring_1[l][r, c] = 1-np.random.normal(0, 1) if new_offspring_1[l][r, c]>1 else new_offspring_1[l][r, c]
                                     new_offspring_2[l][r, c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(-1, 1))
-                                    #new_offspring_2[l][r, c] = 1-np.random.normal(0, 1) if new_offspring_1[l][r, c]>1 else new_offspring_2[l][r, c]
                         
                         else:
                             cols = parent1[l].shape[0]
@@ -318,9 +322,7 @@ class GA():
 
                             for c in range(cols):
                                 new_offspring_1[l][c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(-1, 1))
-                                #new_offspring_1[l][c] = 1-np.random.normal(0, 1) if new_offspring_1[l][c]>1 else new_offspring_1[l][c]
                                 new_offspring_2[l][c] += (0 if random.uniform(0, 1) > self.mutation_factor/100 else np.random.normal(-1, 1))
-                                #new_offspring_2[l][c] = 1-np.random.normal(0, 1) if new_offspring_1[l][c]>1 else new_offspring_2[l][c]
 
                     offspring.append(new_offspring_1)
                     offspring.append(new_offspring_2)
