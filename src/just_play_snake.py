@@ -66,12 +66,6 @@ def play_ai_snake():
 
 
 def main():
-    # with open('src/populations/2022_09_02 23_55_04_393604/gen_105.json') as f:
-    #     gen = json.load(f)
-    #     wei = gen['Individual_9']['Weights']
-    #     start = gen['Individual_9']['Starting position']
-    #     apples = gen['Individual_9']['Apples']
-
     customizable_settings = [Setup.MAP_SIZE, Setup.N_IN_GENERATION, Setup.N_GENERATIONS, Setup.N_PARENTS, Setup.VISION_MODE, Setup.NN_INPUT, Setup.NN_OUTPUT, Setup.NN_HIDDEN, Setup.NN_HIDDEN_ACTIVATION, Setup.NN_OUTPUT_ACTIVATION, Setup.P_PATH]
 
     while True:
