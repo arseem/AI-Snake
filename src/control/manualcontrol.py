@@ -9,6 +9,7 @@ class ManualControl:
         self.detect_key = threading.Thread(target=self.get_direction, daemon=True)
         self.detect_key.start()
         self.direction = self.s._direction
+        self.pause = False
 
     def get_direction(self):
         while True:
@@ -41,5 +42,6 @@ class ManualControl:
         t = threading.Timer(self.move_interval, self.move)
         t.daemon = True
         t.start()
-        if not self.s.is_lost and not self.s.first_move:
-            self.s.make_move(self.direction)
+        if not self.pause:
+            if not self.s.is_lost and not self.s.first_move:
+                self.s.make_move(self.direction)

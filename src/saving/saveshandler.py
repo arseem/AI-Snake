@@ -32,6 +32,8 @@ class SavesHandler:
             info_pd = pd.DataFrame(info_dict.values(), index=info_dict.keys(), columns=['POPULATION INFO'])
             print(info_pd)
 
+        self.n_of_gens = len(os.listdir(self.path))-1
+
         if self.cache_gens:
             self.population = {}
             for i in range(len(os.listdir(self.path))):

@@ -38,6 +38,7 @@ class GA():
             self.control_engine.move_interval = 0
         self.model = model
         self.info = ''
+        self.pause = False
         self.population = self._init_population()
 
 
@@ -128,6 +129,9 @@ class GA():
                 data_history = []
                 
                 while not self.s.is_lost:
+
+                    while self.pause:
+                        pass
                     
                     one_move = time.perf_counter()
                     move, data = self.control_engine._move_for_learning()

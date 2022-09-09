@@ -48,7 +48,7 @@ def play_saved_snake():
     snake = SnakeEngine(Setup.MAP_SIZE, representations=Setup.REPRESENTATIONS)
     control = FromSave(snake, Setup.MOVE_INTERVAL, save)
     
-    board = VisualizeBoard(snake, Setup.FIG_SIZE, control)
+    board = VisualizeBoard(snake, Setup.FIG_SIZE, control, brain=control)
     return(board.run_board())
 
 

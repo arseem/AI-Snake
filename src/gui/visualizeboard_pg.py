@@ -7,6 +7,8 @@ class VisualizeBoard:
     def __init__(self, engine, fig_size, control, brain=False, fps=60):
         self.control_engine = control
         self.brain = brain
+        if brain:
+            self.brain_mode = 'save' if hasattr(brain, 'save') else 'ai'
         self.fps = fps
         self.fig_size = fig_size
 
@@ -32,16 +34,24 @@ class VisualizeBoard:
         else:
             self.display = pg.display.set_mode((self.fig_size*180, self.fig_size*130), pg.RESIZABLE)
             self.manager = pygame_gui.UIManager((self.fig_size*180, self.fig_size*130))
-        start_val = 10 if self.brain else -np.log(self.control_engine.move_interval)
         self.map_size_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*122, self.fig_size*100, self.fig_size*5), value_range=(4, 50), start_value=self.s._map_size, manager=self.manager, object_id='map_size')
         if self.brain:
-            self.mutation_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*105, self.fig_size*90, self.fig_size*5), value_range=(0, self.brain.n_parents*10), start_value=2, manager=self.manager, object_id='mutation')
-            self.parents_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*97, self.fig_size*90, self.fig_size*5), value_range=(2, self.brain.n_in_gen), start_value=self.brain.n_parents, manager=self.manager, object_id='parents')
-            self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 100), start_value=100, manager=self.manager, object_id='speed')
+            if self.brain_mode=='ai':
+                self.mutation_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*105, self.fig_size*90, self.fig_size*5), value_range=(0, self.brain.n_parents*10), start_value=2, manager=self.manager, object_id='mutation')
+                self.parents_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*97, self.fig_size*90, self.fig_size*5), value_range=(2, self.brain.n_in_gen), start_value=self.brain.n_parents, manager=self.manager, object_id='parents')
+                self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 100), start_value=100, manager=self.manager, object_id='speed')
+                self.lines_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*180, self.fig_size*115, self.fig_size*25, self.fig_size*10), text='VISION LINES', manager=self.manager, object_id='lines_button')
+
+            else:
+                self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 10), start_value=-np.log(self.control_engine.move_interval), manager=self.manager, object_id='speed')
+                self.ind_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*105, self.fig_size*90, self.fig_size*5), value_range=(1, self.brain.n_in_gen), start_value=1, manager=self.manager, object_id='ind')
+                self.gen_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*97, self.fig_size*90, self.fig_size*5), value_range=(1, self.brain.n_gen), start_value=1, manager=self.manager, object_id='gen')
+                self.load_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*180, self.fig_size*115, self.fig_size*25, self.fig_size*10), text='LOAD SNAKE', manager=self.manager, object_id='load_button')
+
         else:
-            self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 10), start_value=start_val, manager=self.manager, object_id='speed')
-        self.lines_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*120, self.fig_size*115, self.fig_size*25, self.fig_size*10), text='VISION LINES', manager=self.manager, object_id='lines_button')
+            self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 10), start_value=-np.log(self.control_engine.move_interval), manager=self.manager, object_id='speed')
         self.menu_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*150, self.fig_size*115, self.fig_size*25, self.fig_size*10), text='MENU', manager=self.manager, object_id='menu_button')
+        self.pause_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*120, self.fig_size*115, self.fig_size*25, self.fig_size*10), text='PAUSE', manager=self.manager, object_id='pause_button')
 
         pg.display.set_caption('Artificially Unintelligent Snake [ A U S ]')
         self._update_surface(data)
@@ -50,7 +60,8 @@ class VisualizeBoard:
     def _change_speed(self, val):
         self.control_engine.move_interval = np.exp(-val)
         if self.brain:
-            self.brain.time_delay = (100-val)/100
+            if self.brain_mode == 'ai':
+                self.brain.time_delay = (100-val)/100
         
     def _change_map_size(self, val):
         self.size_to_change = val
@@ -60,6 +71,21 @@ class VisualizeBoard:
 
     def _change_n_parents(self, val):
         self.brain.n_parents = val
+    
+    def _change_individual(self, val):
+        self.brain.ind_num_set = val
+
+    def _change_generation(self, val):
+        self.brain.gen_num_set = val
+
+    def _change_pause(self):
+        if self.brain:
+            self.brain.pause = not self.brain.pause
+            self.pause_button.set_text('PLAY' if self.brain.pause else 'PAUSE')
+        
+        else:
+            self.control_engine.pause = not self.control_engine.pause
+            self.pause_button.set_text('PLAY' if self.control_engine.pause else 'PAUSE')
 
     
     def _update_surface(self, data):
@@ -79,30 +105,29 @@ class VisualizeBoard:
             self.display.blit(score, (self.fig_size*120, self.fig_size*15))
 
         if self.brain:
-            x_h, y_h = (self.fig_size*100/self.s._map_size * self.s._head[0] + self.fig_size*100/self.s._map_size/2, self.fig_size*100/self.s._map_size * self.s._head[1] + self.fig_size*100/self.s._map_size/2)
-            vision_data = self.control_engine.vision_data
-            if vision_data and self.draw_vision_lines:
-                head_xy = (x_h, y_h)
-                w = (0, y_h)
-                e = (self.fig_size*100, y_h)
-                n = (x_h, 0)
-                s = (x_h, self.fig_size*100)
-                nw = (x_h-self.fig_size*100, y_h-self.fig_size*100)
-                ne = (x_h+self.fig_size*100, y_h-self.fig_size*100)
-                sw = (x_h-self.fig_size*100, y_h+self.fig_size*100)
-                se = (x_h+self.fig_size*100, y_h+self.fig_size*100)
+            if self.brain_mode == 'ai':
+                x_h, y_h = (self.fig_size*100/self.s._map_size * self.s._head[0] + self.fig_size*100/self.s._map_size/2, self.fig_size*100/self.s._map_size * self.s._head[1] + self.fig_size*100/self.s._map_size/2)
+                vision_data = self.control_engine.vision_data
+                if vision_data and self.draw_vision_lines:
+                    head_xy = (x_h, y_h)
+                    w = (0, y_h)
+                    e = (self.fig_size*100, y_h)
+                    n = (x_h, 0)
+                    s = (x_h, self.fig_size*100)
+                    nw = (x_h-self.fig_size*100, y_h-self.fig_size*100)
+                    ne = (x_h+self.fig_size*100, y_h-self.fig_size*100)
+                    sw = (x_h-self.fig_size*100, y_h+self.fig_size*100)
+                    se = (x_h+self.fig_size*100, y_h+self.fig_size*100)
+                    
+                    pg.draw.line(surf, 100 if vision_data[1]['w'] else (0, 255, 38) if vision_data[2]['w'] else (231, 235, 204), head_xy, w, width=1) 
+                    pg.draw.line(surf, 100 if vision_data[1]['e'] else (0, 255, 38) if vision_data[2]['e'] else (231, 235, 204), head_xy, e, width=1)
+                    pg.draw.line(surf, 100 if vision_data[1]['n'] else (0, 255, 38) if vision_data[2]['n'] else (231, 235, 204), head_xy, n, width=1) 
+                    pg.draw.line(surf, 100 if vision_data[1]['s'] else (0, 255, 38) if vision_data[2]['s'] else (231, 235, 204), head_xy, s, width=1)
+                    pg.draw.line(surf, 100 if vision_data[1]['nw'] else (0, 255, 38) if  vision_data[2]['nw'] else (231, 235, 204), head_xy, nw, width=1)  
+                    pg.draw.line(surf, 100 if vision_data[1]['ne'] else (0, 255, 38) if  vision_data[2]['ne'] else (231, 235, 204), head_xy, ne, width=1)  
+                    pg.draw.line(surf, 100 if vision_data[1]['sw'] else (0, 255, 38) if  vision_data[2]['sw'] else (231, 235, 204), head_xy, sw, width=1)  
+                    pg.draw.line(surf, 100 if vision_data[1]['se'] else (0, 255, 38) if  vision_data[2]['se'] else (231, 235, 204), head_xy, se, width=1)  
                 
-                pg.draw.line(surf, 100 if vision_data[1]['w'] else (0, 255, 38) if vision_data[2]['w'] else (231, 235, 204), head_xy, w, width=1) 
-                pg.draw.line(surf, 100 if vision_data[1]['e'] else (0, 255, 38) if vision_data[2]['e'] else (231, 235, 204), head_xy, e, width=1)
-                pg.draw.line(surf, 100 if vision_data[1]['n'] else (0, 255, 38) if vision_data[2]['n'] else (231, 235, 204), head_xy, n, width=1) 
-                pg.draw.line(surf, 100 if vision_data[1]['s'] else (0, 255, 38) if vision_data[2]['s'] else (231, 235, 204), head_xy, s, width=1)
-                pg.draw.line(surf, 100 if vision_data[1]['nw'] else (0, 255, 38) if  vision_data[2]['nw'] else (231, 235, 204), head_xy, nw, width=1)  
-                pg.draw.line(surf, 100 if vision_data[1]['ne'] else (0, 255, 38) if  vision_data[2]['ne'] else (231, 235, 204), head_xy, ne, width=1)  
-                pg.draw.line(surf, 100 if vision_data[1]['sw'] else (0, 255, 38) if  vision_data[2]['sw'] else (231, 235, 204), head_xy, sw, width=1)  
-                pg.draw.line(surf, 100 if vision_data[1]['se'] else (0, 255, 38) if  vision_data[2]['se'] else (231, 235, 204), head_xy, se, width=1)  
-            
-            pg.draw.rect(surf, (255, 255, 255), (0, 0, self.fig_size*100, self.fig_size*100), 1)
-
             break_text = self.font_small.render(f'______________________________', 1, (255, 255, 255))
             n_gen = self.font_small.render(f'GENERATION:  {self.brain.gen_num} / {self.brain.n_gen}', 1, (255, 255, 255))
             n_ind = self.font_small.render(f'INDIVIDUAL:  {self.brain.ind_num} / {self.brain.n_in_gen}', 1, (255, 255, 255))
@@ -110,7 +135,7 @@ class VisualizeBoard:
             h_fit = self.font_small.render(f'HIGHEST FITNESS', 1, (255, 255, 255))
             h_fit_o = self.font_small.render(f'        OVERALL:  {self.brain.highest_fitness[0]} (GEN {self.brain.highest_fitness[1]})', 1, (255, 255, 255))
             h_fit_g = self.font_small.render(f'    CURRENT GEN:  {self.brain.highest_fitness_gen}', 1, (255, 255, 255))
-            c_fit = self.font_small.render(f'LAST FITNESS:     {self.brain.last_fitness}', 1, (255, 255, 255))
+            c_fit = self.font_small.render(f'LAST FITNESS:     {self.brain.last_fitness}' if self.brain_mode=='ai' else f'CURRENT FITNESS:  {self.brain.last_fitness}', 1, (255, 255, 255))
 
             len_inp = len(self.brain.data_check)
             inp_centers = []
@@ -118,11 +143,6 @@ class VisualizeBoard:
                 pg.draw.circle(self.display, (int(255*v), 0, 0) if v>=0 else (0, 0, 0), (self.fig_size*228, int(1.8*self.fig_size*120/len_inp)+int(i*self.fig_size*120/len_inp)), int(self.fig_size))
                 inp_centers.append((self.fig_size*228, int(1.8*self.fig_size*120/len_inp)+int(i*self.fig_size*120/len_inp)))
                 self.display.blit(self.font_smallest.render(str(round(v, 2) if v not in (0, 1, -1) else '   1' if v==1 else '  -1' if v==-1 else '   0'), 1, (255, 255, 255)), (self.fig_size*220, int(1.8*0.9*self.fig_size*120/len_inp)+int(i*self.fig_size*120/len_inp)))
-
-            mut_label = self.font_small.render(f'MUTATION FACTOR ({self.brain.mutation_factor})', 1, (255, 255, 255))
-            mut_rect = map_size_label.get_rect(center=(self.fig_size*160, self.fig_size*107.5))
-            parents_label = self.font_small.render(f'NUMBER OF PARENTS ({self.brain.n_parents})', 1, (255, 255, 255))
-            parents_rect = map_size_label.get_rect(center=(self.fig_size*157.5, self.fig_size*99.5))
             
             self.display.blit(break_text, (self.fig_size*120, self.fig_size*17.5))
             self.display.blit(n_gen, (self.fig_size*120, self.fig_size*25))
@@ -134,13 +154,28 @@ class VisualizeBoard:
             self.display.blit(h_fit_g, (self.fig_size*120, self.fig_size*55))
             self.display.blit(c_fit, (self.fig_size*120, self.fig_size*60))
             
+            
+        pg.draw.rect(surf, (255, 255, 255), (0, 0, self.fig_size*100, self.fig_size*100), 1)
         self.display.blit(surf, (self.fig_size*10, self.fig_size*10))
         self.manager.draw_ui(self.display)
         self.display.blit(speed_label, speed_label_rect)
         self.display.blit(map_size_label, map_size_rect)
         if self.brain:
-            self.display.blit(mut_label, mut_rect)
-            self.display.blit(parents_label, parents_rect)
+            if self.brain_mode=='ai':
+                mut_label = self.font_small.render(f'MUTATION FACTOR ({self.brain.mutation_factor})', 1, (255, 255, 255))
+                mut_rect = map_size_label.get_rect(center=(self.fig_size*160, self.fig_size*107.5))
+                parents_label = self.font_small.render(f'NUMBER OF PARENTS ({self.brain.n_parents})', 1, (255, 255, 255))
+                parents_rect = map_size_label.get_rect(center=(self.fig_size*157.5, self.fig_size*99.5))
+                self.display.blit(mut_label, mut_rect)
+                self.display.blit(parents_label, parents_rect)
+            
+            else:
+                ind_label = self.font_small.render(f'INDIVIDUAL ({self.brain.ind_num_set})', 1, (255, 255, 255))
+                ind_rect = map_size_label.get_rect(center=(self.fig_size*160, self.fig_size*107.5))
+                gen_label = self.font_small.render(f'GENERATION ({self.brain.gen_num_set})', 1, (255, 255, 255))
+                gen_rect = map_size_label.get_rect(center=(self.fig_size*160, self.fig_size*99.5))
+                self.display.blit(ind_label, ind_rect)
+                self.display.blit(gen_label, gen_rect)
         pg.display.update()
 
 
@@ -161,6 +196,11 @@ class VisualizeBoard:
             lost1 = self.font.render(f'{self.brain.ind_num} / {self.brain.n_in_gen}', 1, (255, 255, 255))
             lost1_rect = lost1.get_rect(center=(self.fig_size*60, self.fig_size*55))
             self.display.blit(lost1, lost1_rect)
+        
+        if self.brain:
+            if self.brain_mode=='save':
+                self.ind_slider.set_current_value(self.brain.ind_num)
+                self.gen_slider.set_current_value(self.brain.gen_num)
         pg.display.update()
 
 
@@ -172,7 +212,7 @@ class VisualizeBoard:
                 if event.type == pg.QUIT:
                     running = False
 
-                if event.type == pg.USEREVENT:
+                if event.type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
                     if event.ui_object_id == 'speed':
                         self._change_speed(self.speed_slider.current_value)
 
@@ -185,8 +225,11 @@ class VisualizeBoard:
                     if event.ui_object_id == 'parents':
                         self._change_n_parents(self.parents_slider.current_value)
 
-                    if event.ui_object_id == 'lines_button':
-                        self.draw_vision_lines = not self.draw_vision_lines
+                    if event.ui_object_id == 'ind':
+                        self._change_individual(self.ind_slider.current_value)
+
+                    if event.ui_object_id == 'gen':
+                        self._change_generation(self.gen_slider.current_value)
 
                 if event.type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_object_id == 'menu_button':
@@ -195,6 +238,15 @@ class VisualizeBoard:
                             self.brain.n_gen = self.brain.gen_num
                             self.brain.t.join()
                         running = False
+
+                    if event.ui_object_id == 'pause_button':
+                        self._change_pause()
+
+                    if event.ui_object_id == 'lines_button':
+                        self.draw_vision_lines = not self.draw_vision_lines
+
+                    if event.ui_object_id == 'load_button':
+                        self.brain.load_individual()
 
                 self.manager.process_events(event)
 
