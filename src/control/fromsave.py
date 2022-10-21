@@ -14,6 +14,10 @@ class FromSave:
         self.n_gen = save.n_of_gens
         self.loop = False
         self.pause = False
+        self.dir_to_go = ''
+        self.n_nodes_input = save.nn_architecture[0]
+        self.n_nodes_hidden = save.nn_architecture[1][0]
+        self.n_nodes_output = save.nn_architecture[2][0]
         self.t = threading.Timer(self.move_interval, self.move)
 
         self.current_loaded_gen_num = False
@@ -56,7 +60,8 @@ class FromSave:
         self.t = t
         if not self.pause:
             if not self.s.is_lost and self.moves:
-                self.s.make_move(self.moves.pop(0))
+                self.dir_to_go = self.moves.pop(0)
+                self.s.make_move(self.dir_to_go)
                 self.data_check = self.input_neurons.pop(0)[0]
             
             else:

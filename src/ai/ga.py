@@ -25,6 +25,7 @@ class GA():
         self.mutation_factor = mutation_factor
         self._prevent_loops = prevent_loops
         self.data_check = ''
+        self.dir_to_go = ''
         self.time_delay = 0
         self.s = engine
         self.given_map_size = self.s._map_size
@@ -37,6 +38,8 @@ class GA():
         if fast_mode:
             self.control_engine.move_interval = 0
         self.model = model
+        self.n_nodes_hidden = model.n_nodes_hidden
+        self.n_nodes_output = model.n_nodes_output
         self.info = ''
         self.pause = False
         self.population = self._init_population()
@@ -136,6 +139,7 @@ class GA():
                     one_move = time.perf_counter()
                     move, data = self.control_engine._move_for_learning()
                     self.data_check = list(data[0])
+                    self.dir_to_go = move
                     if self._prevent_loops:
                         if self.data_check in data_history and self.s.score==last_score:
                             self.s.is_lost = True

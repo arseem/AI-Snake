@@ -33,6 +33,7 @@ class SavesHandler:
             print(info_pd)
 
         self.n_of_gens = len(os.listdir(self.path))-1
+        self.nn_architecture = info_pd.loc['Neural Network architecture'].values[0][0]
 
         if self.cache_gens:
             self.population = {}

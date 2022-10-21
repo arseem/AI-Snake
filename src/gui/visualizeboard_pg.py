@@ -1,6 +1,12 @@
 import numpy as np
 import pygame as pg
 import pygame_gui
+from pygame import gfxdraw
+def circle_draw(surface, color, xy, radius):
+    gfxdraw.aacircle(surface, int(xy[0]), int(xy[1]), radius, color)
+    gfxdraw.filled_circle(surface, int(xy[0]), int(xy[1]), radius, color)
+
+pg.draw.circle = circle_draw
 
 class VisualizeBoard:
 
@@ -45,7 +51,7 @@ class VisualizeBoard:
             else:
                 self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 10), start_value=-np.log(self.control_engine.move_interval), manager=self.manager, object_id='speed')
                 self.ind_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*105, self.fig_size*90, self.fig_size*5), value_range=(1, self.brain.n_in_gen), start_value=1, manager=self.manager, object_id='ind')
-                self.gen_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*97, self.fig_size*90, self.fig_size*5), value_range=(1, self.brain.n_gen), start_value=1, manager=self.manager, object_id='gen')
+                self.gen_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*97, self.fig_size*90, self.fig_size*5), value_range=(1, self.brain.n_gen-1), start_value=1, manager=self.manager, object_id='gen')
                 self.load_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*180, self.fig_size*115, self.fig_size*25, self.fig_size*10), text='LOAD SNAKE', manager=self.manager, object_id='load_button')
 
         else:
@@ -144,6 +150,30 @@ class VisualizeBoard:
                 inp_centers.append((self.fig_size*228, int(1.8*self.fig_size*120/len_inp)+int(i*self.fig_size*120/len_inp)))
                 self.display.blit(self.font_smallest.render(str(round(v, 2) if v not in (0, 1, -1) else '   1' if v==1 else '  -1' if v==-1 else '   0'), 1, (255, 255, 255)), (self.fig_size*220, int(1.8*0.9*self.fig_size*120/len_inp)+int(i*self.fig_size*120/len_inp)))
             
+            h_layers = self.brain.n_nodes_hidden
+            n_h_layers = len(h_layers)
+            h_centers = []
+            for n, j in enumerate(h_layers):
+                h_centers.append([])
+                for i in range(j):
+                    pg.draw.circle(self.display, (0, 0, 0), (self.fig_size*228+self.fig_size*15/(n_h_layers)*(n+1), int(1.2*self.fig_size*120/j)+int(i*self.fig_size*120/j)), int(self.fig_size))
+                    h_centers[n].append((self.fig_size*228+self.fig_size*15/(n_h_layers)*(n+1), int(1.2*self.fig_size*120/j)+int(i*self.fig_size*120/j)))
+
+            n_out = self.brain.n_nodes_output
+            out_centers = []
+            direction = self.brain.dir_to_go
+            directions = ['U', 'D', 'L', 'R']
+            for i in range(n_out):
+                pg.draw.circle(self.display, (255 if direction==directions[i] else 0, 0, 0), (self.fig_size*228+self.fig_size*30, int(1.8*self.fig_size*120/n_out)+int(i*self.fig_size*120/n_out/4)), int(self.fig_size))
+                out_centers.append((self.fig_size*228+self.fig_size*30, int(1.8*self.fig_size*120/n_out)+int(i*self.fig_size*120/n_out/4)))
+                self.display.blit(self.font_smallest.render(directions[i], 1, (255, 255, 255)), (self.fig_size*228+self.fig_size*32, int(1.8*self.fig_size*120/n_out)+int(i*self.fig_size*120/n_out/4)))
+
+            centers = [inp_centers, *h_centers, out_centers]
+            for i in range(1, len(centers)):
+                for x in centers[i]:
+                    for y in centers[i-1]:
+                        pg.draw.aaline(self.display, (0, 0, 0), (x[0]-int(self.fig_size), x[1]), (y[0]+int(self.fig_size), y[1]))  
+
             self.display.blit(break_text, (self.fig_size*120, self.fig_size*17.5))
             self.display.blit(n_gen, (self.fig_size*120, self.fig_size*25))
             self.display.blit(n_ind, (self.fig_size*120, self.fig_size*30))
