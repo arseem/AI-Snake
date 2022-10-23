@@ -198,7 +198,7 @@ class GA():
             for i, model in enumerate(self.population):
                 inp.append((i, model, self.model_copies[i], deepcopy(self.control_engine)))
             
-            with ThreadPoolExecutor(max_workers=16) as executor:
+            with ThreadPoolExecutor(max_workers=self.n_in_gen) as executor:
                 results = executor.map(self._iterate_individuals, inp)
 
         else:
@@ -221,6 +221,7 @@ class GA():
         print(row.iloc[:, 0:6])
         row.iloc[:, 0:6].to_csv(f'{self.path}{self.folder}/.temp/.best_individuals.temp', index=True, header=False if self.gen_num>1 else True, mode='a', sep=';')
         row.iloc[:, 7].to_json(f'{self.path}{self.folder}/models/best_model_gen_{self.gen_num}.json')
+        gen.T.iloc[:, 7].to_json(f'{self.path}{self.folder}/models/last_gen_all_models.json')
 
         fitness_sum = gen.loc['Fitness'].sum()
         choice_weights = [(gen[individual].loc['Fitness']**10)/fitness_sum for individual in gen]
