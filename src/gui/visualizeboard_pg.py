@@ -47,6 +47,7 @@ class VisualizeBoard:
                 self.parents_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*120, self.fig_size*97, self.fig_size*90, self.fig_size*5), value_range=(2, self.brain.n_in_gen), start_value=self.brain.n_parents, manager=self.manager, object_id='parents')
                 self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 100), start_value=100, manager=self.manager, object_id='speed')
                 self.lines_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*180, self.fig_size*115, self.fig_size*25, self.fig_size*10), text='VISION LINES', manager=self.manager, object_id='lines_button')
+                self.parallel_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*120, self.fig_size*82, self.fig_size*25, self.fig_size*10), text='PARALLEL', manager=self.manager, object_id='parallel_button')
 
             else:
                 self.speed_slider = pygame_gui.elements.UIHorizontalSlider(pg.rect.Rect(self.fig_size*10, self.fig_size*114, self.fig_size*100, self.fig_size*5), value_range=(0, 10), start_value=-np.log(self.control_engine.move_interval), manager=self.manager, object_id='speed')
@@ -274,6 +275,9 @@ class VisualizeBoard:
 
                     if event.ui_object_id == 'lines_button':
                         self.draw_vision_lines = not self.draw_vision_lines
+
+                    if event.ui_object_id == 'parallel_button':
+                        self.brain.parallel = not self.brain.parallel
 
                     if event.ui_object_id == 'load_button':
                         self.brain.load_individual()

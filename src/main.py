@@ -57,7 +57,7 @@ def play_ai_snake():
     vision = Vision(representations=Setup.REPRESENTATIONS, mode=Setup.VISION_MODE)
     control = FromModel(snake, Setup.MOVE_INTERVAL, vision)
     model = Model(Setup.NN_INPUT, Setup.NN_OUTPUT, Setup.NN_HIDDEN, Setup.NN_HIDDEN_ACTIVATION, Setup.NN_OUTPUT_ACTIVATION, biases=True)
-    brain = GA(snake, control, model, Setup.N_IN_GENERATION, Setup.N_GENERATIONS, populations_path=Setup.P_PATH, print_info=True)
+    brain = GA(snake, control, model, Setup.N_IN_GENERATION, Setup.N_GENERATIONS, populations_path=Setup.P_PATH, print_info=True, parallel=False)
     board = VisualizeBoard(snake, Setup.FIG_SIZE, control, brain=brain)
 
     brain.run_generation()

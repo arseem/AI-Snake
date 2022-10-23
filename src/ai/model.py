@@ -5,7 +5,7 @@ import numpy as np
 
 class Model:
 
-    def __init__(self, n_nodes_input:int, n_nodes_output:int, n_nodes_hidden:list, hidden_activation:str, output_activation:str, biases=True):
+    def __init__(self, n_nodes_input:int, n_nodes_output:int, n_nodes_hidden:list, hidden_activation:str, output_activation:str, biases=True, summary=True):
         self.n_nodes_input = n_nodes_input
         self.n_nodes_hidden = n_nodes_hidden
         self.n_nodes_output = n_nodes_output
@@ -25,7 +25,8 @@ class Model:
             model.add(keras.layers.Dense(n, activation=hidden_activation, bias_initializer=bias_initializer, kernel_initializer=tf.keras.initializers.GlorotUniform, trainable=False))
 
         model.add(keras.layers.Dense(n_nodes_output, activation=output_activation, bias_initializer=bias_initializer, kernel_initializer=tf.keras.initializers.GlorotUniform, trainable=False))
-        model.summary()
+        if summary:
+            model.summary()
         self.model = model
 
     def predict(self, data:list):

@@ -34,6 +34,7 @@ class SavesHandler:
 
         self.n_of_gens = len(os.listdir(self.path))-1
         self.nn_architecture = info_pd.loc['Neural Network architecture'].values[0][0]
+        self.n_in_gen = info_pd.loc['Individuals in generation'].values[0]
 
         if self.cache_gens:
             self.population = {}
@@ -42,25 +43,33 @@ class SavesHandler:
 
 
     def import_generation(self, i) -> list:
-        if self.cache_gens:
-            if not self.population[i]:
+        try:
+            if self.cache_gens:
+                if not self.population[i]:
+                    with open(f'{self.path}/gen_{i}.json') as f:
+                        individuals = json.loads(f.read())
+                        gen_frame = pd.DataFrame(individuals, columns=individuals.keys())
+                        gen_frame_sorted = gen_frame.sort_values('Fitness', axis=1, inplace=False, ascending=False)
+
+                    self.population[i] = [gen_frame_sorted.iloc[:, 0]['Fitness'], gen_frame_sorted if self.sort_fit else gen_frame]
+
+                return self.population[i]
+
+            else:
                 with open(f'{self.path}/gen_{i}.json') as f:
                     individuals = json.loads(f.read())
                     gen_frame = pd.DataFrame(individuals, columns=individuals.keys())
                     gen_frame_sorted = gen_frame.sort_values('Fitness', axis=1, inplace=False, ascending=False)
 
-                self.population[i] = [gen_frame_sorted.iloc[:, 0]['Fitness'], gen_frame_sorted if self.sort_fit else gen_frame]
+                return [gen_frame_sorted.iloc[:, 0]['Fitness'], gen_frame_sorted if self.sort_fit else gen_frame]
+        
+        except FileNotFoundError:
+            return self.import_generation_csv(i)
 
-            return self.population[i]
-
-        else:
-            with open(f'{self.path}/gen_{i}.json') as f:
-                individuals = json.loads(f.read())
-                gen_frame = pd.DataFrame(individuals, columns=individuals.keys())
-                gen_frame_sorted = gen_frame.sort_values('Fitness', axis=1, inplace=False, ascending=False)
-
-            return [gen_frame_sorted.iloc[:, 0]['Fitness'], gen_frame_sorted if self.sort_fit else gen_frame]
-
+    
+    def import_generation_csv(self, i) -> list:
+        data = pd.read_csv(f'{self.path}/best_individuals.csv', sep=';')
+        return data.iloc[i-2, 1:], data.iloc[i-2, 1:]
 
 
     def convert_weights(weights:list) -> np.array:
