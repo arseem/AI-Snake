@@ -14,7 +14,7 @@ from ai.model import Model
 
 class GA():
 
-    def __init__(self, engine, control_engine, model, n_in_generation:int, n_generation:int, n_parents=False, mutation_factor=2, parallel=False, fast_mode=False, prevent_loops=True, populations_path='./!POPULATIONS/', auto_change_map_size=False, print_info=True):
+    def __init__(self, engine, control_engine, model, n_in_generation:int, n_generation:int, population_name=False, init_weights=False, n_parents=False, mutation_factor=2, parallel=False, fast_mode=False, prevent_loops=True, populations_path='./!POPULATIONS/', auto_change_map_size=False, print_info=True):
         self.n_in_gen = n_in_generation
         self.n_gen = n_generation
 
@@ -30,6 +30,10 @@ class GA():
         self.data_check = ''
         self.dir_to_go = ''
         self.time_delay = 0
+        self._init_weights = init_weights
+        self._name = population_name
+        if self._init_weights and len(self._init_weights)!=self.n_in_gen:
+            raise Exception('Wrong init weights vector size')
         self.s = engine
         self.given_map_size = self.s._map_size
         self.auto_map = auto_change_map_size
@@ -72,7 +76,7 @@ class GA():
         self.add_to_map = 2
         population = []
         self.timestamp = str(datetime.datetime.now())
-        self.folder = self.timestamp.replace(':', '_').replace('.', '_').replace('-', '_')
+        self.folder = self.timestamp.replace(':', '_').replace('.', '_').replace('-', '_') if not self._name else self._name
         os.makedirs(f'{self.path}{self.folder}/models')
         os.makedirs(f'{self.path}{self.folder}/.temp') 
         info_dict = {
@@ -90,8 +94,10 @@ class GA():
             print(info)
             info.to_json(f, orient='columns', indent=4)
 
-        for _ in range(self.n_in_gen):
+        for i in range(self.n_in_gen):
             subject = keras.models.clone_model(self.model.model)
+            if self._init_weights:
+                subject.load_weights(self._init_weights[i])
             population.append(subject)
         
         return population

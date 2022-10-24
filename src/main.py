@@ -1,4 +1,8 @@
 from dataclasses import dataclass
+import json
+import numpy as np
+import tensorflow
+
 from control.manualcontrol import ManualControl
 from control.fromsave import FromSave
 from control.frommodel import FromModel
@@ -52,17 +56,37 @@ def play_saved_snake():
     return(board.run_board())
 
 
-def play_ai_snake():
+def play_ai_snake(init_weights=False, name=False):
     snake = SnakeEngine(Setup.MAP_SIZE, representations=Setup.REPRESENTATIONS)
     vision = Vision(representations=Setup.REPRESENTATIONS, mode=Setup.VISION_MODE)
     control = FromModel(snake, Setup.MOVE_INTERVAL, vision)
     model = Model(Setup.NN_INPUT, Setup.NN_OUTPUT, Setup.NN_HIDDEN, Setup.NN_HIDDEN_ACTIVATION, Setup.NN_OUTPUT_ACTIVATION, biases=True)
-    brain = GA(snake, control, model, Setup.N_IN_GENERATION, Setup.N_GENERATIONS, populations_path=Setup.P_PATH, print_info=True, parallel=False)
+    brain = GA(snake, control, model, Setup.N_IN_GENERATION, Setup.N_GENERATIONS, populations_path=Setup.P_PATH, print_info=True, parallel=False, init_weights=init_weights, population_name=name)
     board = VisualizeBoard(snake, Setup.FIG_SIZE, control, brain=brain)
 
     brain.run_generation()
     #brain.t.join()
     return(board.run_board())
+
+
+def resume_ai_snake():
+    save = SavesHandler()
+    (_, _, Setup.N_IN_GENERATION, Setup.N_PARENTS, _, Setup.VISION_MODE, nn_architecture) = save.info_dict.values()
+    Setup.NN_INPUT = nn_architecture[0][0]
+    Setup.NN_HIDDEN = nn_architecture[0][1][0]
+    Setup.NN_HIDDEN_ACTIVATION = nn_architecture[0][1][1]
+    Setup.NN_OUTPUT = nn_architecture[0][2][0]
+    Setup.NN_OUTPUT_ACTIVATION = nn_architecture[0][2][1]
+
+    with open(f'{save.path}/models/last_gen_all_models.json') as f:
+        weights = list(json.loads(f.read()).values())
+    
+    for i, w in enumerate(weights):
+        for j, k in enumerate(w):
+            weights[i][j] = np.asarray(k, dtype=float)
+
+
+    play_ai_snake(init_weights=weights, name=f"{save.path.split('/')[-1]}_RESUMED")
 
 
 def main():
@@ -98,6 +122,9 @@ def main():
 
         elif checksum == 3:
             checksum = play_snake()
+
+        elif checksum == 4:
+            checksum = resume_ai_snake()
 
         if checksum == 0:
             break

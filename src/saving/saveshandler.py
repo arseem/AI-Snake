@@ -29,6 +29,7 @@ class SavesHandler:
 
         with open(f'{self.path}/info.json') as f:
             info_dict = json.loads(f.read())['POPULATION INFO']
+            self.info_dict = info_dict
             info_pd = pd.DataFrame(info_dict.values(), index=info_dict.keys(), columns=['POPULATION INFO'])
             print(info_pd)
 

@@ -43,7 +43,8 @@ class Menu:
             label = self.font_small.render(text, 1, (255, 255, 255))    
             self.display.blit(label, (self.fig_size*3, self.fig_size*5+self.fig_size*5*i))
 
-        self.ai_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*3, self.fig_size*65, self.fig_size*20, self.fig_size*10), text='NEW', manager=self.manager, object_id='ai_button')
+        self.ai_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*3, self.fig_size*65, self.fig_size*20, self.fig_size*5), text='NEW', manager=self.manager, object_id='ai_button')
+        self.resume_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*3, self.fig_size*70, self.fig_size*20, self.fig_size*5), text='RESUME', manager=self.manager, object_id='resume_button')
         self.saved_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*25, self.fig_size*65, self.fig_size*20, self.fig_size*10), text='LOAD', manager=self.manager, object_id='saved_button')
         self.play_button = pygame_gui.elements.UIButton(pg.rect.Rect(self.fig_size*47, self.fig_size*65, self.fig_size*20, self.fig_size*10), text='PLAY', manager=self.manager, object_id='play_button')
   
@@ -69,6 +70,9 @@ class Menu:
 
                     if event.ui_object_id == 'play_button':
                         output = 3
+
+                    if event.ui_object_id == 'resume_button':
+                        output = 4
 
                     running = False
 
