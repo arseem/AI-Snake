@@ -124,7 +124,6 @@ class GA():
             move, data = local_control._move_for_learning()
             if self.parallel_gen:
                 local_data_check = list(data[0])
-                local_dir = move
                 if self._prevent_loops:
                     if local_data_check in data_history and local_s.score==last_score:
                         local_s.is_lost = True
@@ -248,7 +247,9 @@ class GA():
 
         gen_time = time.perf_counter()-start_gen_timer
         parallel = 'yes' if self.parallel_gen else 'no'
-        pd.DataFrame(data=[[gen_time, row.loc[:, 'Score'].values[0], row.loc[:, 'Fitness'].values[0], parallel]], index=[f'GEN_{self.gen_num}'], columns=['Time[s]', 'Max Score', 'Fitness', 'Parallely']).to_csv(f'{self.path}{self.folder}/.temp/.generations_data.temp', index=True, header=False if self.gen_num>1 else True, mode='a', sep=';')
+        print(gen.loc['Score'].values)
+        print(np.average(gen.loc['Score'].values))
+        pd.DataFrame(data=[[gen_time, row.loc[:, 'Score'].values[0], np.average(gen.loc['Score'].values), row.loc[:, 'Fitness'].values[0], parallel]], index=[f'GEN_{self.gen_num}'], columns=['Time[s]', 'Max Score', 'Avg Score', 'Fitness', 'Parallely']).to_csv(f'{self.path}{self.folder}/.temp/.generations_data.temp', index=True, header=False if self.gen_num>1 else True, mode='a', sep=';')
 
         if self.print_info:
             print(f'\nGeneration {self.gen_num}: Finished\t|\tTime: {round(gen_time, 2)}s')
