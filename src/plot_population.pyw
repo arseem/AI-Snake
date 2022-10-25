@@ -8,13 +8,17 @@ FRONT_COLOR = 'white'
 SEC_COLOR = 'green'
 
 def ask_for_file():
-    global path
+    global path, suptitle
     root = Tk()
     root.withdraw()
     path_to_change = filedialog.askopenfilename(title='Open .csv', initialdir='.')
     if path_to_change:
         path = path_to_change
 
+    title = path.split('/')[-2]
+    if suptitle:
+        suptitle.set_text(f"POPULATION {title}")
+    
 
 try:
     all_subdirs = os.listdir(f'{os.getcwd()}\populations')
@@ -24,6 +28,7 @@ try:
     path = f'{latest_subdir}\generations_data.csv'
     pd.read_csv(path, delimiter=';')
 except:
+    suptitle = False
     ask_for_file()
 
 fig, axes = plt.subplots(2)
@@ -42,9 +47,11 @@ for ax in axes:
 
 (time_plot, score_plot) = axes
 fig.canvas.manager.toolbar._Button("PREVIOUS", "zoom_to_rect_large.png", ask_for_file, command=ask_for_file)
-time_plot.set_title('Time [s] per generation')
-score_plot.set_title('Score per generation')
+time_plot.set_title('Time [s] per generation', color=FRONT_COLOR)
+score_plot.set_title('Score per generation', color=FRONT_COLOR)
 #avg_score_plot.set_title('Average score per generation')
+title = path.split('\\')[-2]
+suptitle = fig.suptitle(f"POPULATION {title}", color=FRONT_COLOR)
 fig.tight_layout()
 plt.ion()
 plt.show()
@@ -60,6 +67,9 @@ while plt.fignum_exists(1):
     if len(time)!=len(time_temp):
         for ax in axes:
             ax.clear()
+            time_plot.set_title('Time [s] per generation', color=FRONT_COLOR)
+            score_plot.set_title('Score per generation', color=FRONT_COLOR)
+
         time_plot.plot(time, color=FRONT_COLOR)
         h, = score_plot.plot(score, color=FRONT_COLOR)
         a, = score_plot.plot(avg_score, color=SEC_COLOR)

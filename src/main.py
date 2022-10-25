@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 import json
 import numpy as np
-import tensorflow
 
 from control.manualcontrol import ManualControl
 from control.fromsave import FromSave
@@ -56,12 +55,12 @@ def play_saved_snake():
     return(board.run_board())
 
 
-def play_ai_snake(init_weights=False, name=False):
+def play_ai_snake(init_weights=False, name=False, previous_path=False):
     snake = SnakeEngine(Setup.MAP_SIZE, representations=Setup.REPRESENTATIONS, max_without_apple=2500)
     vision = Vision(representations=Setup.REPRESENTATIONS, mode=Setup.VISION_MODE)
     control = FromModel(snake, Setup.MOVE_INTERVAL, vision)
     model = Model(Setup.NN_INPUT, Setup.NN_OUTPUT, Setup.NN_HIDDEN, Setup.NN_HIDDEN_ACTIVATION, Setup.NN_OUTPUT_ACTIVATION, biases=True)
-    brain = GA(snake, control, model, Setup.N_IN_GENERATION, Setup.N_GENERATIONS, populations_path=Setup.P_PATH, print_info=True, parallel=False, init_weights=init_weights, population_name=name)
+    brain = GA(snake, control, model, Setup.N_IN_GENERATION, Setup.N_GENERATIONS, populations_path=Setup.P_PATH, print_info=True, parallel=False, init_weights=init_weights, population_name=name, previous_path=previous_path)
     board = VisualizeBoard(snake, Setup.FIG_SIZE, control, brain=brain)
 
     brain.run_generation()
@@ -85,8 +84,10 @@ def resume_ai_snake():
         for j, k in enumerate(w):
             weights[i][j] = np.asarray(k, dtype=float)
 
+    new_name = f"{save.path.split('/')[-1]}_RESUMED"
+    new_path = f"{save.path[-len(save.path.split('/')[-1])]}/{new_name}"
 
-    play_ai_snake(init_weights=weights, name=f"{save.path.split('/')[-1]}_RESUMED")
+    play_ai_snake(init_weights=weights, name=new_name, previous_path=save.path)
 
 
 def main():

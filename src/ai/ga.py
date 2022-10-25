@@ -8,13 +8,14 @@ import os
 import random
 import time
 import shutil
+import distutils.dir_util
 from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
 from ai.model import Model
 
 class GA():
 
-    def __init__(self, engine, control_engine, model, n_in_generation:int, n_generation:int, population_name=False, init_weights=False, n_parents=False, mutation_factor=2, parallel=False, fast_mode=False, prevent_loops=True, populations_path='./!POPULATIONS/', auto_change_map_size=False, print_info=True):
+    def __init__(self, engine, control_engine, model, n_in_generation:int, n_generation:int, population_name=False, init_weights=False, n_parents=False, mutation_factor=2, parallel=False, fast_mode=False, prevent_loops=True, populations_path='./!POPULATIONS/', auto_change_map_size=False, print_info=True, previous_path=False):
         self.n_in_gen = n_in_generation
         self.n_gen = n_generation
 
@@ -23,6 +24,8 @@ class GA():
         self.t = threading.Thread(target=self._run_generation, daemon=True)
 
         self.n_parents = n_parents if n_parents else self._compute_n_parents()
+
+        self.previous_path = previous_path if previous_path else False
 
         self.mutation_factor = mutation_factor
         self._prevent_loops = prevent_loops
@@ -99,6 +102,13 @@ class GA():
             print(info)
             info.to_json(f, orient='columns', indent=4)
 
+        if self.previous_path:
+            distutils.dir_util.copy_tree(f"{self.previous_path}/models", f"{self.path}{self.folder}/models/old_models")
+            shutil.copyfile(f"{self.previous_path}/generations_data.csv", f"{self.path}{self.folder}/generations_data.csv")
+            shutil.copyfile(f"{self.previous_path}/best_individuals.csv", f"{self.path}{self.folder}/best_individuals.csv")
+            shutil.copyfile(f"{self.previous_path}/.temp/.generations_data.temp", f"{self.path}{self.folder}/.temp/.generations_data.temp")
+            shutil.copyfile(f"{self.previous_path}/.temp/.best_individuals.temp", f"{self.path}{self.folder}/.temp/.best_individuals.temp")
+
         for i in range(self.n_in_gen):
             subject = keras.models.clone_model(self.model.model)
             if self._init_weights:
@@ -109,7 +119,8 @@ class GA():
 
     
     def _calc_fitness(self, score, n_moves):
-        return (n_moves**2)*(2**score)
+        #return (n_moves**2)*(2**score)
+        return (score**3)/n_moves
 
 
     def _iterate_individuals(self, inp_vector):
@@ -227,7 +238,7 @@ class GA():
         gen = pd.DataFrame(data=gen_dict.values(), index=gen_dict.keys(), columns=[f'Individual_{n}' for n in gen_dict['Index']])
         row = gen.T.sort_values('Fitness', axis=0, ascending=False).iloc[[0]].set_axis([f'GEN_{self.gen_num}'], axis='index')
         print(row.iloc[:, 0:6])
-        row.iloc[:, 0:6].to_csv(f'{self.path}{self.folder}/.temp/.best_individuals.temp', index=True, header=False if self.gen_num>1 else True, mode='a', sep=';')
+        row.iloc[:, 0:6].to_csv(f'{self.path}{self.folder}/.temp/.best_individuals.temp', index=True, header=False if self.gen_num>1 or self.previous_path else True, mode='a', sep=';')
         row.iloc[:, 7].to_json(f'{self.path}{self.folder}/models/best_model_gen_{self.gen_num}.json')
         gen.T.iloc[:, 7].to_json(f'{self.path}{self.folder}/models/last_gen_all_models.json')
 
@@ -258,7 +269,7 @@ class GA():
         parallel = 'yes' if self.parallel_gen else 'no'
         print(gen.loc['Score'].values)
         print(np.average(gen.loc['Score'].values))
-        pd.DataFrame(data=[[gen_time, row.loc[:, 'Score'].values[0], np.average(gen.loc['Score'].values), row.loc[:, 'Fitness'].values[0], parallel]], index=[f'GEN_{self.gen_num}'], columns=['Time[s]', 'Max Score', 'Avg Score', 'Fitness', 'Parallely']).to_csv(f'{self.path}{self.folder}/.temp/.generations_data.temp', index=True, header=False if self.gen_num>1 else True, mode='a', sep=';')
+        pd.DataFrame(data=[[gen_time, row.loc[:, 'Score'].values[0], np.average(gen.loc['Score'].values), row.loc[:, 'Fitness'].values[0], parallel]], index=[f'GEN_{self.gen_num}'], columns=['Time[s]', 'Max Score', 'Avg Score', 'Fitness', 'Parallely']).to_csv(f'{self.path}{self.folder}/.temp/.generations_data.temp', index=True, header=False if self.gen_num>1 or self.previous_path else True, mode='a', sep=';')
 
         if self.print_info:
             print(f'\nGeneration {self.gen_num}: Finished\t|\tTime: {round(gen_time, 2)}s')
