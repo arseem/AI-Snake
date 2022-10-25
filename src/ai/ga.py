@@ -77,8 +77,13 @@ class GA():
         population = []
         self.timestamp = str(datetime.datetime.now())
         self.folder = self.timestamp.replace(':', '_').replace('.', '_').replace('-', '_') if not self._name else self._name
-        os.makedirs(f'{self.path}{self.folder}/models')
-        os.makedirs(f'{self.path}{self.folder}/.temp') 
+        while True:
+            try:
+                os.makedirs(f'{self.path}{self.folder}/models')
+                os.makedirs(f'{self.path}{self.folder}/.temp')
+                break
+            except FileExistsError:
+                self.folder = self.folder + '_new'
         info_dict = {
             'Timestamp': self.timestamp,
             'Number of generations':self.n_gen,
@@ -97,7 +102,7 @@ class GA():
         for i in range(self.n_in_gen):
             subject = keras.models.clone_model(self.model.model)
             if self._init_weights:
-                subject.load_weights(self._init_weights[i])
+                subject.set_weights(self._init_weights[i])
             population.append(subject)
         
         return population
@@ -128,21 +133,19 @@ class GA():
             
             one_move = time.perf_counter()
             move, data = local_control._move_for_learning()
-            if self.parallel_gen:
-                local_data_check = list(data[0])
-                if self._prevent_loops:
-                    if local_data_check in data_history and local_s.score==last_score:
-                        local_s.is_lost = True
-                        print('LOOPED')
-                    data_history.append(local_data_check)
-            else:
+            if not self.parallel_gen:
                 self.data_check = list(data[0])
                 self.dir_to_go = move
-                if self._prevent_loops:
-                    if self.data_check in data_history and local_s.score==last_score:
-                        local_s.is_lost = True
-                        print('LOOPED')
-                    data_history.append(self.data_check)
+
+            if self._prevent_loops:
+                #if self.data_check in data_history and local_s.score==last_score:
+                #flat_map = str(local_s.map_matrix)
+                flat_map = str((local_s._head, local_s._tail, local_s._apple, local_s._direction))
+                if flat_map in data_history:
+                    local_s.is_lost = True
+                    print('LOOPED')
+                data_history.append(flat_map)
+
             moves+=move
             input_data.append(data)
 

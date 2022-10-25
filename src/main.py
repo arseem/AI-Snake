@@ -57,7 +57,7 @@ def play_saved_snake():
 
 
 def play_ai_snake(init_weights=False, name=False):
-    snake = SnakeEngine(Setup.MAP_SIZE, representations=Setup.REPRESENTATIONS)
+    snake = SnakeEngine(Setup.MAP_SIZE, representations=Setup.REPRESENTATIONS, max_without_apple=2500)
     vision = Vision(representations=Setup.REPRESENTATIONS, mode=Setup.VISION_MODE)
     control = FromModel(snake, Setup.MOVE_INTERVAL, vision)
     model = Model(Setup.NN_INPUT, Setup.NN_OUTPUT, Setup.NN_HIDDEN, Setup.NN_HIDDEN_ACTIVATION, Setup.NN_OUTPUT_ACTIVATION, biases=True)
